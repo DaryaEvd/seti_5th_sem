@@ -1,7 +1,12 @@
-## Copy finder
+## Copy finder  
 
-from `mkdir` :   
+### How to compile 
+
+from dir `lab1` :  
+`mkdir build`  
+`cd build`  
 `cmake ..`  
-'make`  
+`make`  
 `./finder [ip group multicast] [port number]`  
+
 
