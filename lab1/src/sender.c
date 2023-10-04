@@ -29,11 +29,12 @@ void *sendThreadWorks(void *arg) {
     pthread_exit(NULL);
   }
 
-  struct sockaddr_in addr;
+  struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
-  addr.sin_family = (sa_family_t)domain;
-  addr.sin_port = (in_port_t)htons(portNum);
-  addr.sin_addr.s_addr = inet_addr(groupAddr);
+  addr.sin6_family = (sa_family_t)domain;
+  addr.sin6_port = (in_port_t)htons(portNum);
+
+  inet_pton(AF_INET6, groupAddr, &addr.sin6_addr);
 
   char *messageToSend = "Hello world\n";
 

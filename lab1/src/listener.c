@@ -33,11 +33,11 @@ void *listenThreadWorks(void *arg) {
     pthread_exit(NULL);
   }
 
-  struct sockaddr_in addr;
+  struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
-  addr.sin_family = (sa_family_t)domain;
-  addr.sin_port = (in_port_t)htons(portNum);
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  addr.sin6_family = (sa_family_t)domain;
+  addr.sin6_port = (in_port_t)htons(portNum);
+  // addr.sin6_addr.s_addr = htonl(INADDR_ANY);
 
   if (bind(fileDescrSocket, (struct sockaddr *)&addr, sizeof(addr)) <
       0) {
@@ -45,11 +45,11 @@ void *listenThreadWorks(void *arg) {
     pthread_exit(NULL);
   }
 
-  struct ip_mreq mreq;
-  mreq.imr_multiaddr.s_addr = inet_addr(groupAddr);
-  mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+  struct ipv6_mreq mreq;
+  mreq.ipv6mr_interface = 0;
+  inet_pton(AF_INET6, groupAddr, &mreq.ipv6mr_multiaddr);
 
-  if (setsockopt(fileDescrSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+  if (setsockopt(fileDescrSocket, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
                  &mreq, sizeof(mreq)) < 0) {
     perror("error in listener: join multicast");
     pthread_exit(NULL);
@@ -66,7 +66,7 @@ void *listenThreadWorks(void *arg) {
                               (struct sockaddr *)&addr, &lengthAddr);
     if (countBytes < 0) {
       perror("error in recvfrom");
-      free_list(copyList);
+      freeList(copyList);
       pthread_exit(NULL);
     }
 
@@ -74,7 +74,7 @@ void *listenThreadWorks(void *arg) {
 
     Copy copy;
     copy.ip = malloc(sizeof(char) * lengthNewIp);
-    inet_ntop(AF_INET, &addr.sin_addr, copy.ip, lengthNewIp);
+    inet_ntop(AF_INET6, &addr.sin6_addr, copy.ip, lengthNewIp);
     copy.currentTime = time(NULL);
 
     copyList = refreshMembersList(copyList, copy);

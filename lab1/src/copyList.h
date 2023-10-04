@@ -16,6 +16,6 @@ typedef struct CopyList {
 CopyList *refreshMembersList(CopyList *copyList, Copy copy);
 
 void printMembers(CopyList *copyList);
-void free_list(CopyList *copyList);
+void freeList(CopyList *copyList);
 
 #endif // COPYLIST_H

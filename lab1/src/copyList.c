@@ -60,7 +60,7 @@ void printMembers(CopyList *copyList) {
   printf("_______________________\n");
 }
 
-void free_list(CopyList *copyList) {
+void freeList(CopyList *copyList) {
   CopyList *tmp;
 
   while (copyList != NULL) {
