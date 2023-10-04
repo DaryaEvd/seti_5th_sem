@@ -1,3 +1,4 @@
+#include "addrStuff.h"
 #include "listener.h"
 #include "sender.h"
 
@@ -7,6 +8,12 @@
 int main(int argc, char **argv) {
   if (argc != 3) {
     printf("Bad input. Enter: [ ip group ] [ portNum number ] \n");
+    return 0;
+  }
+
+  int isOkAddr = getDomain(argv[1]);
+  if(isOkAddr == -1) {
+    perror("bad address");
     return 0;
   }
 
