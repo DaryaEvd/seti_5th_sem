@@ -26,6 +26,8 @@ void *sendThreadWorks(void *arg) {
   }
 
   struct sockaddr_in addr4;
+  struct sockaddr_in6 addr6;
+
   if (domain != AF_INET6) {
     memset(&addr4, 0, sizeof(addr4));
     addr4.sin_family = (sa_family_t)domain;
@@ -33,12 +35,12 @@ void *sendThreadWorks(void *arg) {
     addr4.sin_addr.s_addr = inet_addr(groupAddr);
   }
 
-  struct sockaddr_in6 addr6;
-  memset(&addr6, 0, sizeof(addr6));
-  addr6.sin6_family = (sa_family_t)domain;
-  addr6.sin6_port = (in_port_t)htons(portNum);
-  inet_pton(AF_INET6, groupAddr, &addr6.sin6_addr);
-
+  else {
+    memset(&addr6, 0, sizeof(addr6));
+    addr6.sin6_family = (sa_family_t)domain;
+    addr6.sin6_port = (in_port_t)htons(portNum);
+    inet_pton(AF_INET6, groupAddr, &addr6.sin6_addr);
+  }
   char *messageToSend = "Hello world\n";
 
   while (1) {
@@ -58,5 +60,7 @@ void *sendThreadWorks(void *arg) {
       perror("error in sender: sendto");
       pthread_exit(NULL);
     }
+
+    sleep(1);
   }
 }

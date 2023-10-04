@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.24) 
-project(copyFinder)
+project(copyFinder C)
 
 find_package (Threads)
 
