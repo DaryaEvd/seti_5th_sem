@@ -20,29 +20,62 @@ typedef struct {
 void *connectionFunc(void *arg) {
   connection_t *conn = (connection_t *)arg;
 
-  char srvMsg[200];
-  memset(srvMsg, '\0', sizeof(srvMsg));
+  char fileNameFromClient[200];
+  memset(fileNameFromClient, '\0', sizeof(fileNameFromClient));
 
-  char cliMsg[200];
-  memset(cliMsg, '\0', sizeof(cliMsg));
-
-  int clientRecv = recv(conn->socketFD, cliMsg, sizeof(cliMsg), 0);
-  if (clientRecv < 0) {
-    perror("server: recv() error");
+  int clientRecvName = recv(conn->socketFD, fileNameFromClient,
+                            sizeof(fileNameFromClient), 0);
+  if (clientRecvName < 0) {
+    perror("server: recv() fileName error");
     pthread_exit(NULL);
   }
 
-  printf("server: Msg from client: '%s'\n", cliMsg);
+  printf("server: Msg from client (filename): '%s'\n",
+         fileNameFromClient);
 
-  strcpy(srvMsg, "server servak");
-
-  int clientSend = send(conn->socketFD, srvMsg, strlen(srvMsg), 0);
-  if (clientSend < 0) {
-    perror("server: send() error");
-    return 0;
+  ssize_t fileSizeFromClient;
+  int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
+                            sizeof(fileSizeFromClient), 0);
+  if (clientRecvName < 0) {
+    perror("server: recv() fileSize error");
+    pthread_exit(NULL);
   }
 
-  printf("server: already sent this msg: '%s'\n", srvMsg);
+  printf("server: Msg from client (filesize): '%ld'\n",
+         fileSizeFromClient);
+
+  FILE *fileToRecv = NULL;
+
+  char output[4096] = "../uploads/";
+  if (fileToRecv == NULL) {
+    strcat(output, fileNameFromClient);
+    fileToRecv = fopen(output, "wb");
+  }
+
+  unsigned char clientMess[1024];
+  size_t readedSize = 0;
+  size_t numBytesRecv = 0;
+
+  while (readedSize != numBytesRecv) {
+    ssize_t chunkReadedBytes =
+        recv(conn->socketFD, clientMess, 1024, 0);
+    readedSize += chunkReadedBytes;
+
+    fwrite(clientMess, 1, readedSize, fileToRecv);
+  }
+
+  printf("server: path to a file: '%s'\n", output);
+
+  // strcpy(srvMsg, "server servak");
+
+  // int clientSend = send(conn->socketFD, srvMsg, strlen(srvMsg),
+  // 0); if (clientSend < 0) {
+  //   perror("server: send() error");
+  //   return 0;
+  // }
+
+  // printf("server: already sent this msg: '%s'\n", srvMsg);
+  // */
 
   if (conn->address.sa_family == AF_INET) {
     struct sockaddr_in *sin = (struct sockaddr_in *)conn;
@@ -70,6 +103,7 @@ int main(int argc, char **argv) {
   char *pathToDirToUploadFiles = "../uploads";
   struct stat st = {0};
   if (stat(pathToDirToUploadFiles, &st) == -1) {
+    printf("server: creating an 'uploads' folder\n");
     mkdir(pathToDirToUploadFiles, 0700);
   }
 
@@ -112,6 +146,8 @@ int main(int argc, char **argv) {
   memset(&clientAddr, 0, sizeof(clientAddr));
 
   connection_t *connection;
+  // connection->lengthAddr = sizeof(struct sockaddr_in);
+
   pthread_t thread;
 
   while (1) {

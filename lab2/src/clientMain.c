@@ -13,6 +13,7 @@ typedef struct clientInfo {
   int socketFD;
   struct sockaddr_in address;
   char *fileName;
+  ssize_t sizeFile;
 } clientInfo;
 
 char *extractLastToken(const char *inputPathToFile) {
@@ -94,7 +95,7 @@ int main(int argc, char **argv) {
 
   printf("client connected\n");
 
-  FILE *file = fopen(fullPathToFileToSend, "r");
+  FILE *file = fopen(fullPathToFileToSend, "rb");
   if (file == NULL) {
     free(client);
     perror("reading file error");
@@ -106,24 +107,44 @@ int main(int argc, char **argv) {
   printf("size file: '%ld' bytes\n", sizeFile);
   rewind(file);
 
+  client->sizeFile = sizeFile;
+
   size_t lengthOfFullFileName = strlen(fullPathToFileToSend) + 1;
 
-  if (send(client->socketFD, fullPathToFileToSend,
-           lengthOfFullFileName, 0) < 0) {
-    perror("client: send() error");
-    return 0;
+  // if (send(client->socketFD, fullPathToFileToSend,
+  //  lengthOfFullFileName, 0) < 0) {
+  if (send(client->socketFD, extractedFileName,
+           strlen(extractedFileName), 0) < 0) {
+    perror("client: send() fileName error");
+    return -1;
   }
 
-  char srvMsg[200];
-  memset(srvMsg, '\0', sizeof(srvMsg));
-
-  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
-  if (cliRecv < 0) {
-    perror("client: recv() error");
-    return 0;
+  if (send(client->socketFD, &sizeFile,
+           sizeof(sizeFile), 0) < 0) {
+    perror("client: send() size error ");
+    return -1;
   }
 
-  printf("client: server's msg: '%s'\n", srvMsg);
+  char buff[1024];
+  size_t readedBytes;
+  while((readedBytes = fread(buff, 1, 1024, file)) > 0) {
+    if(send(client->socketFD, buff, readedBytes, 0) < 0 ) {
+      perror("client: sending()");
+      return -1;
+    }
+  }
+
+
+  // char srvMsg[200];
+  // memset(srvMsg, '\0', sizeof(srvMsg));
+
+  // ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
+  // if (cliRecv < 0) {
+  //   perror("client: recv() error");
+  //   return 0;
+  // }
+
+  // printf("client: server's msg: '%s'\n", srvMsg);
 
   close(client->socketFD);
 
