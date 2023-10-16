@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <error.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,8 +11,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-void *connectionFunc(void *socketFD) {
-  int startSocket = *(int *)socketFD;
+typedef struct {
+  int socketFD;
+  struct sockaddr address;
+  socklen_t lengthAddr;
+} connection_t;
+
+void *connectionFunc(void *arg) {
+  connection_t *conn = (connection_t *)arg;
 
   char srvMsg[200];
   memset(srvMsg, '\0', sizeof(srvMsg));
@@ -19,10 +26,9 @@ void *connectionFunc(void *socketFD) {
   char cliMsg[200];
   memset(cliMsg, '\0', sizeof(cliMsg));
 
-  int clientRecv = recv(startSocket, cliMsg, sizeof(cliMsg), 0);
+  int clientRecv = recv(conn->socketFD, cliMsg, sizeof(cliMsg), 0);
   if (clientRecv < 0) {
     perror("server: recv() error");
-    // return -1;
     pthread_exit(NULL);
   }
 
@@ -30,37 +36,45 @@ void *connectionFunc(void *socketFD) {
 
   strcpy(srvMsg, "server servak");
 
-  int clientSend = send(startSocket, srvMsg, strlen(srvMsg), 0);
+  int clientSend = send(conn->socketFD, srvMsg, strlen(srvMsg), 0);
   if (clientSend < 0) {
     perror("server: send() error");
     return 0;
   }
 
   printf("server: already sent this msg: '%s'\n", srvMsg);
-  close(startSocket);
 
-  return NULL;
+  if (conn->address.sa_family == AF_INET) {
+    struct sockaddr_in *sin = (struct sockaddr_in *)conn;
+    int portClient = sin->sin_port;
+    char buffer[20];
+    inet_ntop(AF_INET, &sin->sin_addr.s_addr, buffer, sizeof(buffer));
+    printf("server: accepted from port #%d and ip addr '%s'\n",
+           portClient, buffer);
+  }
+
+  close(conn->socketFD);
+  free(conn);
+  pthread_exit(0);
 }
 
 int main(int argc, char **argv) {
   if (argc != 2) {
     printf("Error! Incorrect input from server!\n");
-    printf("Server use: [./name.o] <port number>\n");
+    printf("Server use: %s <port number>\n", argv[0]);
     return -1;
   }
 
   int portNum = atoi(argv[1]);
 
   char *pathToDirToUploadFiles = "../uploads";
-
   struct stat st = {0};
-
   if (stat(pathToDirToUploadFiles, &st) == -1) {
     mkdir(pathToDirToUploadFiles, 0700);
   }
 
   int serverSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
-  if (serverSocketFileDescr == -1) {
+  if (serverSocketFileDescr < 0) {
     perror("server: socket() error");
     return -1;
   }
@@ -86,9 +100,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  // struct sockaddr_in clientAddr;
-
-  int maxAmountConnection = 10;
+  int maxAmountConnection = 4;
   if (listen(serverSocketFileDescr, maxAmountConnection) < 0) {
     perror("listen() error");
     return -1;
@@ -97,34 +109,25 @@ int main(int argc, char **argv) {
   printf("Server: waiting for clients ...\n");
 
   struct sockaddr_in clientAddr;
-  memset(&clientAddr, 0, sizeof(clientAddr)); //?????
+  memset(&clientAddr, 0, sizeof(clientAddr));
 
-  clientAddr.sin_family = AF_INET;
-  socklen_t lengthClientAddr = sizeof(clientAddr);
+  connection_t *connection;
+  pthread_t thread;
 
   while (1) {
-    int clientAccept =
-        accept(serverSocketFileDescr, (struct sockaddr *)&clientAddr,
-               &lengthClientAddr);
-    if (clientAccept < 0) {
+    connection = (connection_t *)malloc(sizeof(connection_t));
+    connection->address.sa_family = AF_INET;
+    connection->socketFD =
+        accept(serverSocketFileDescr, &connection->address,
+               &connection->lengthAddr);
+    if (connection->socketFD < 0) {
+      free(connection);
       perror("server: accept() error");
       return -1;
+    } else {
+      pthread_create(&thread, 0, connectionFunc, (void *)connection);
+      pthread_detach(thread);
     }
-
-    pthread_t thread;
-    int *newSocket = malloc(sizeof *newSocket);
-    *newSocket = clientAccept;
-
-    int statusCreatingThread = pthread_create(
-        &thread, NULL, connectionFunc, (void *)newSocket);
-    if (statusCreatingThread < 0) {
-      perror("pthread_create() error");
-      return -1;
-    }
-
-    int portClient = htons(clientAddr.sin_port);
-    printf("server: accepted from port #%d\n", portClient);
-   
   }
 
   close(serverSocketFileDescr);

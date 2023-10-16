@@ -59,10 +59,6 @@ int main(int argc, char **argv) {
   char srvMsg[200];
   memset(srvMsg, '\0', sizeof(srvMsg));
 
-  // char cliMsg[200];
-  // memset(cliMsg, '\0', sizeof(cliMsg));
-  // char *messg = "biba bebra boba";
-  // strncpy(cliMsg, messg, strlen(messg));
 
   ssize_t cliRecv =
       recv(clientSocketFileDescr, srvMsg, sizeof(srvMsg), 0);
