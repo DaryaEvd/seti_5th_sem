@@ -37,6 +37,7 @@ void *connectionFunc(void *socketFD) {
   }
 
   printf("server: already sent this msg: '%s'\n", srvMsg);
+  close(startSocket);
 
   return NULL;
 }
@@ -123,34 +124,6 @@ int main(int argc, char **argv) {
 
     int portClient = htons(clientAddr.sin_port);
     printf("server: accepted from port #%d\n", portClient);
-
-    /*
-    char srvMsg[200];
-    memset(srvMsg, '\0', sizeof(srvMsg));
-
-    char cliMsg[200];
-    memset(cliMsg, '\0', sizeof(cliMsg));
-
-    int clientRecv = recv(clientAccept, cliMsg, sizeof(srvMsg), 0);
-    if (clientRecv < 0) {
-      perror("server: recv() error");
-      return -1;
-    }
-
-    printf("server: Msg from client: '%s'\n", cliMsg);
-
-    strcpy(srvMsg, "server servak");
-
-    int clientSend = send(clientAccept, srvMsg, strlen(srvMsg), 0);
-    if (clientSend < 0) {
-      perror("server: send() error");
-      return 0;
-    }
-
-    printf("server: already sent this msg: '%s'\n", srvMsg);
-
-    close(clientAccept);
-    */
    
   }
 
