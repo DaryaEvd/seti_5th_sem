@@ -48,5 +48,32 @@ int main(int argc, char **argv) {
 
   printf("client connected\n");
 
+  size_t lengthOfFileName = strlen(pathToFileToSend) + 1;
+
+  if (send(clientSocketFileDescr, pathToFileToSend, lengthOfFileName,
+           0) < 0) {
+    perror("client: send() error");
+    return 0;
+  }
+
+  char srvMsg[200];
+  memset(srvMsg, '\0', sizeof(srvMsg));
+
+  // char cliMsg[200];
+  // memset(cliMsg, '\0', sizeof(cliMsg));
+  // char *messg = "biba bebra boba";
+  // strncpy(cliMsg, messg, strlen(messg));
+
+  ssize_t cliRecv =
+      recv(clientSocketFileDescr, srvMsg, sizeof(srvMsg), 0);
+  if (cliRecv < 0) {
+    perror("client: recv() error");
+    return 0;
+  }
+
+  printf("client: server's msg: '%s'\n", srvMsg);
+
+  close(clientSocketFileDescr);
+
   return 0;
 }

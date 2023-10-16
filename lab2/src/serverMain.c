@@ -26,15 +26,15 @@ int main(int argc, char **argv) {
     mkdir(pathToDirToUploadFiles, 0700);
   }
 
-  int socketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
-  if (socketFileDescr == -1) {
+  int serverSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
+  if (serverSocketFileDescr == -1) {
     perror("server: socket() error");
     return -1;
   }
 
   int enable = 1;
-  if (setsockopt(socketFileDescr, SOL_SOCKET, SO_REUSEADDR, &enable,
-                 sizeof(int)) < 0) {
+  if (setsockopt(serverSocketFileDescr, SOL_SOCKET, SO_REUSEADDR,
+                 &enable, sizeof(int)) < 0) {
     perror("server: setsockopt(SO_REUSEADDR) error");
     return -1;
   }
@@ -44,10 +44,10 @@ int main(int argc, char **argv) {
 
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_addr.s_addr = INADDR_ANY;
-  serverAddr.sin_port = htons(atoi(argv[1]));
+  serverAddr.sin_port = htons(portNum);
 
   // bind
-  if (bind(socketFileDescr, (struct sockaddr *)&serverAddr,
+  if (bind(serverSocketFileDescr, (struct sockaddr *)&serverAddr,
            sizeof(serverAddr)) < 0) {
     perror("server: bind() error");
     return -1;
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   // struct sockaddr_in clientAddr;
 
   int maxAmountConnection = 10;
-  if (listen(socketFileDescr, maxAmountConnection) < 0) {
+  if (listen(serverSocketFileDescr, maxAmountConnection) < 0) {
     perror("listen() error");
     return -1;
   }
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     socklen_t lengthClientAddr = sizeof(clientAddr);
 
     int clientAccept =
-        accept(socketFileDescr, (struct sockaddr *)&clientAddr,
+        accept(serverSocketFileDescr, (struct sockaddr *)&clientAddr,
 
                &lengthClientAddr);
 
@@ -81,7 +81,33 @@ int main(int argc, char **argv) {
     int portClient = htons(clientAddr.sin_port);
     printf("server: accepted from port #%d\n", portClient);
 
+    char srvMsg[200];
+    memset(srvMsg, '\0', sizeof(srvMsg));
 
+    char cliMsg[200];
+    memset(cliMsg, '\0', sizeof(cliMsg));
 
+    int clientRecv = recv(clientAccept, cliMsg, sizeof(srvMsg), 0);
+    if (clientRecv < 0) {
+      perror("server: recv() error");
+      return -1;
+    }
+
+    printf("server: Msg from client: '%s'\n", cliMsg);
+
+    strcpy(srvMsg, "server servak");
+
+    int clientSend = send(clientAccept, srvMsg, strlen(srvMsg), 0);
+    if (clientSend < 0) {
+      perror("server: send() error");
+      return 0;
+    }
+
+    printf("server: already sent this msg: '%s'\n", srvMsg);
+
+    close(clientAccept);
   }
+
+  close(serverSocketFileDescr);
+  return 0;
 }
