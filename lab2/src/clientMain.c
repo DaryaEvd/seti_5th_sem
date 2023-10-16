@@ -9,49 +9,107 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+typedef struct clientInfo {
+  int socketFD;
+  struct sockaddr_in address;
+  char *fileName;
+} clientInfo;
+
+char *extractLastToken(const char *inputPathToFile) {
+  int amountSymbolsInLastToken = 0;
+
+  for (int i = strlen(inputPathToFile) - 1; i > 0; i--) {
+    if (inputPathToFile[i] == '/') {
+      break;
+    }
+    amountSymbolsInLastToken++;
+  }
+
+  char *lastToken =
+      calloc(amountSymbolsInLastToken + 1, sizeof(char));
+
+  for (int i = 0; i < amountSymbolsInLastToken; i++) {
+    lastToken[i] = inputPathToFile[i + (strlen(inputPathToFile) -
+                                        amountSymbolsInLastToken)];
+  }
+
+  return lastToken;
+}
+
 int main(int argc, char **argv) {
   if (argc != 4) {
     printf("Error! Incorrecrt input from client!\n");
-    printf("Client use: [./name.o] <path to file> <DNS name or IP "
+    printf("Client use: %s <path to file> <DNS name or IP "
            "address> "
-           "<port number>\n");
+           "<port number>\n",
+           argv[0]);
     return -1;
   }
 
-  char *pathToFileToSend = argv[1];
-  char *address = argv[2];
+  char *fullPathToFileToSend = argv[1];
+  if (access(fullPathToFileToSend, F_OK) != 0) {
+    perror("error in access: ");
+    return -1;
+  }
+
+  char *extractedFileName = extractLastToken(fullPathToFileToSend);
+
+  if (strlen(extractedFileName) > sizeof(char) * 4096) {
+    printf("Your filename is too long. Rename it or give another "
+           "one\n");
+    return -1;
+  }
+
+  printf("file name '%s'\n", extractedFileName);
+
+  char *addressIP = argv[2];
   int portNum = atoi(argv[3]);
 
-  int clientSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
-  if (clientSocketFileDescr == -1) {
+  clientInfo *client;
+  client = (clientInfo *)malloc(sizeof(clientInfo));
+
+  client->socketFD = socket(AF_INET, SOCK_STREAM, 0);
+  if (client->socketFD == -1) {
     perror("server: socket() error");
     return -1;
   }
 
   int enable = 1;
-  if (setsockopt(clientSocketFileDescr, SOL_SOCKET, SO_REUSEADDR,
-                 &enable, sizeof(int)) < 0) {
+  if (setsockopt(client->socketFD, SOL_SOCKET, SO_REUSEADDR, &enable,
+                 sizeof(int)) < 0) {
     perror("client: setsockopt(SO_REUSEADDR) error");
     return -1;
   }
 
-  struct sockaddr_in serverAddr;
-  serverAddr.sin_addr.s_addr = inet_addr(address);
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(portNum);
+  client->address.sin_addr.s_addr = inet_addr(addressIP);
+  client->address.sin_family = AF_INET;
+  client->address.sin_port = htons(portNum);
 
-  if (connect(clientSocketFileDescr, (struct sockaddr *)&serverAddr,
-              sizeof(serverAddr)) != 0) {
+  if (connect(client->socketFD, (struct sockaddr *)&client->address,
+              sizeof(client->address)) != 0) {
+
     perror("client: connect() error");
     return -1;
   }
 
   printf("client connected\n");
 
-  size_t lengthOfFileName = strlen(pathToFileToSend) + 1;
+  FILE *file = fopen(fullPathToFileToSend, "r");
+  if (file == NULL) {
+    free(client);
+    perror("reading file error");
+    return -1;
+  }
 
-  if (send(clientSocketFileDescr, pathToFileToSend, lengthOfFileName,
-           0) < 0) {
+  fseek(file, 0L, SEEK_END);
+  long sizeFile = ftell(file);
+  printf("size file: '%ld' bytes\n", sizeFile);
+  rewind(file);
+
+  size_t lengthOfFullFileName = strlen(fullPathToFileToSend) + 1;
+
+  if (send(client->socketFD, fullPathToFileToSend,
+           lengthOfFullFileName, 0) < 0) {
     perror("client: send() error");
     return 0;
   }
@@ -59,9 +117,7 @@ int main(int argc, char **argv) {
   char srvMsg[200];
   memset(srvMsg, '\0', sizeof(srvMsg));
 
-
-  ssize_t cliRecv =
-      recv(clientSocketFileDescr, srvMsg, sizeof(srvMsg), 0);
+  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
   if (cliRecv < 0) {
     perror("client: recv() error");
     return 0;
@@ -69,7 +125,7 @@ int main(int argc, char **argv) {
 
   printf("client: server's msg: '%s'\n", srvMsg);
 
-  close(clientSocketFileDescr);
+  close(client->socketFD);
 
   return 0;
 }
