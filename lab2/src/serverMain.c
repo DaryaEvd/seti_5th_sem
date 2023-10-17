@@ -45,6 +45,7 @@ void *connectionFunc(void *arg) {
 
   printf("server: Msg from client (filesize): '%ld' bytes\n",
          fileSizeFromClient);
+  long sizeFile = fileSizeFromClient;
 
   FILE *fileToRecv = NULL;
 
@@ -54,27 +55,56 @@ void *connectionFunc(void *arg) {
     fileToRecv = fopen(output, "wb");
   }
 
-  char buffer[SIZE];
+  // char buffer[SIZE];
+  // long totalBytes = 0;
+  // while (1) {
+  //   long n = recv(conn->socketFD, buffer, SIZE, 0);
+  //   totalBytes += n;
+  //   if (n <= 0) {
+  //     printf("alohaajskdhflajshfa\n");
+  //     break;
+  //     // return NULL;
+  //   }
+  //   fprintf(fileToRecv, "%s", buffer);
+  //   bzero(buffer, SIZE);
+  // }
+  // printf("arhfaelhalef\n");
+
   long totalBytes = 0;
+  long sizeLittleBuffer = 1024;
+  char littleBuffer[sizeLittleBuffer];
   while (1) {
-    long n = recv(conn->socketFD, buffer, SIZE, 0);
-    totalBytes += n;
-    if (n <= 0) {
-      printf("alohaajskdhflajshfa\n");
+    long bytesToRead = (fileSizeFromClient > sizeLittleBuffer)
+                           ? sizeLittleBuffer
+                           : fileSizeFromClient;
+    if (bytesToRead <= 0) {
       break;
-      // return NULL;
     }
-    fprintf(fileToRecv, "%s", buffer);
-    bzero(buffer, SIZE);
+    long writedAmount = 0;
+    while (writedAmount != bytesToRead) {
+      long count;
+      if ((count = recv(conn->socketFD, littleBuffer + writedAmount,
+                        bytesToRead - writedAmount, 0)) < 0) {
+        pthread_exit(NULL);
+      }
+      fwrite(littleBuffer + writedAmount, 1, count, fileToRecv);
+
+      writedAmount += count;
+    }
+
+    fileSizeFromClient -= bytesToRead;
+    totalBytes += bytesToRead;
+    if (fileSizeFromClient <= 0) {
+      break;
+    }
   }
-  printf("arhfaelhalef\n");
 
   char response[200];
   memset(response, '\0', sizeof(response));
   printf("total bytes: %ld\n", totalBytes);
-  printf("filesize %ld\n", fileSizeFromClient);
+  printf("filesize %ld\n", sizeFile);
 
-  if (totalBytes == fileSizeFromClient) {
+  if (totalBytes == sizeFile) {
     strcpy(response, "sizes are the same");
   } else {
     strcpy(response, "sizes are different");
