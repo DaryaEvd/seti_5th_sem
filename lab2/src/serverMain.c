@@ -55,15 +55,37 @@ void *connectionFunc(void *arg) {
   }
 
   char buffer[SIZE];
+  long totalBytes = 0;
   while (1) {
-    int n = recv(conn->socketFD, buffer, SIZE, 0);
+    long n = recv(conn->socketFD, buffer, SIZE, 0);
+    totalBytes += n;
     if (n <= 0) {
+      printf("alohaajskdhflajshfa\n");
       break;
-      // return;
+      // return NULL;
     }
     fprintf(fileToRecv, "%s", buffer);
     bzero(buffer, SIZE);
   }
+  printf("arhfaelhalef\n");
+
+  char response[200];
+  memset(response, '\0', sizeof(response));
+  printf("total bytes: %ld\n", totalBytes);
+  printf("filesize %ld\n", fileSizeFromClient);
+
+  if (totalBytes == fileSizeFromClient) {
+    strcpy(response, "sizes are the same");
+  } else {
+    strcpy(response, "sizes are different");
+  }
+  ssize_t servSend =
+      send(conn->socketFD, response, sizeof(response), 0);
+  if (servSend < 0) {
+    perror("server: send() in the end error");
+    pthread_exit(NULL);
+  }
+  printf("server: result is: '%s' \n", response);
 
   close(conn->socketFD);
   free(conn);

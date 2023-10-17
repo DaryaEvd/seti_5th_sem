@@ -126,20 +126,22 @@ int main(int argc, char **argv) {
 
   while (fgets(data, SIZE, file) != NULL) {
     if (send(client->socketFD, data, sizeof(data), 0) == -1) {
-      perror("[-] Error in sendung data");
+      perror("client: send() error file");
       exit(1);
     }
     bzero(data, SIZE);
   }
 
-  /*
-    char srvMsg[200];
-    memset(srvMsg, '\0', sizeof(srvMsg));
-    ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg),
-    0); if (cliRecv < 0) { perror("client: recv() error"); return 0;
-    }
-    printf("client: server's msg: '%s'\n", srvMsg);
-  */
+  // /*
+  char srvMsg[200];
+  memset(srvMsg, '\0', sizeof(srvMsg));
+  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
+  if (cliRecv < 0) {
+    perror("client: recv() error");
+    return 0;
+  }
+  printf("client: server's msg: '%s'\n", srvMsg);
+  // */
 
   close(client->socketFD);
 
