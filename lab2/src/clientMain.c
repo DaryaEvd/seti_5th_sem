@@ -9,11 +9,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#define SIZE 1024
+
 typedef struct clientInfo {
   int socketFD;
   struct sockaddr_in address;
   char *fileName;
-  ssize_t sizeFile;
+  long sizeFile;
 } clientInfo;
 
 char *extractLastToken(const char *inputPathToFile) {
@@ -120,61 +122,24 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int bytes_sent = 0;
-  int total_bytes = 0;
-  char buffer[1024];
-  // Send file contents to server
-  while (!feof(file)) {
-    bytes_sent = fread(buffer, 1, 1024, file);
-    send(client->socketFD, buffer, bytes_sent, 0);
-    total_bytes += bytes_sent;
+  char data[SIZE] = {0};
+
+  while (fgets(data, SIZE, file) != NULL) {
+    if (send(client->socketFD, data, sizeof(data), 0) == -1) {
+      perror("[-] Error in sendung data");
+      exit(1);
+    }
+    bzero(data, SIZE);
   }
 
-  // const long sizeOfLittleBuffer = 4096;
-  // char *littleBuffer = calloc(sizeOfLittleBuffer, sizeof(char));
-
-  // while (1) {
-  //   ssize_t bytesToRead = (sizeFile > sizeOfLittleBuffer)
-  //                             ? sizeOfLittleBuffer
-  //                             : sizeFile;
-  //   if (bytesToRead <= 0) {
-  //     break;
-  //   }
-  //   ssize_t readedAmount = 0;
-  //   while (readedAmount != bytesToRead) {
-  //     ssize_t count;
-  //     if ((count = send(client->socketFD, littleBuffer +
-  //     readedAmount,
-  //                       bytesToRead - readedAmount, 0)) < 0) {
-  //       close(client->socketFD);
-  //       free(littleBuffer);
-  //     }
-  //     readedAmount += count;
-
-  //     sizeFile -= bytesToRead;
-  //   }
-  // }
-  // free(littleBuffer);
-
-  // char buff[1024];
-  // size_t readedBytes;
-  // while((readedBytes = fread(buff, 1, 1024, file)) > 0) {
-  //   if(send(client->socketFD, buff, readedBytes, 0) < 0 ) {
-  //     perror("client: sending()");
-  //     return -1;
-  //   }
-  // }
-
-  char srvMsg[200];
-  memset(srvMsg, '\0', sizeof(srvMsg));
-
-  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
-  if (cliRecv < 0) {
-    perror("client: recv() error");
-    return 0;
-  }
-
-  printf("client: server's msg: '%s'\n", srvMsg);
+  /*
+    char srvMsg[200];
+    memset(srvMsg, '\0', sizeof(srvMsg));
+    ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg),
+    0); if (cliRecv < 0) { perror("client: recv() error"); return 0;
+    }
+    printf("client: server's msg: '%s'\n", srvMsg);
+  */
 
   close(client->socketFD);
 
