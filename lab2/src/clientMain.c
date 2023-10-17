@@ -109,42 +109,72 @@ int main(int argc, char **argv) {
 
   client->sizeFile = sizeFile;
 
-  size_t lengthOfFullFileName = strlen(fullPathToFileToSend) + 1;
-
-  // if (send(client->socketFD, fullPathToFileToSend,
-  //  lengthOfFullFileName, 0) < 0) {
   if (send(client->socketFD, extractedFileName,
-           strlen(extractedFileName), 0) < 0) {
+           strlen(extractedFileName) + 1, 0) < 0) {
     perror("client: send() fileName error");
     return -1;
   }
 
-  if (send(client->socketFD, &sizeFile,
-           sizeof(sizeFile), 0) < 0) {
+  if (send(client->socketFD, &sizeFile, sizeof(sizeFile), 0) < 0) {
     perror("client: send() size error ");
     return -1;
   }
 
-  char buff[1024];
-  size_t readedBytes;
-  while((readedBytes = fread(buff, 1, 1024, file)) > 0) {
-    if(send(client->socketFD, buff, readedBytes, 0) < 0 ) {
-      perror("client: sending()");
-      return -1;
-    }
+  int bytes_sent = 0;
+  int total_bytes = 0;
+  char buffer[1024];
+  // Send file contents to server
+  while (!feof(file)) {
+    bytes_sent = fread(buffer, 1, 1024, file);
+    send(client->socketFD, buffer, bytes_sent, 0);
+    total_bytes += bytes_sent;
   }
 
+  // const long sizeOfLittleBuffer = 4096;
+  // char *littleBuffer = calloc(sizeOfLittleBuffer, sizeof(char));
 
-  // char srvMsg[200];
-  // memset(srvMsg, '\0', sizeof(srvMsg));
+  // while (1) {
+  //   ssize_t bytesToRead = (sizeFile > sizeOfLittleBuffer)
+  //                             ? sizeOfLittleBuffer
+  //                             : sizeFile;
+  //   if (bytesToRead <= 0) {
+  //     break;
+  //   }
+  //   ssize_t readedAmount = 0;
+  //   while (readedAmount != bytesToRead) {
+  //     ssize_t count;
+  //     if ((count = send(client->socketFD, littleBuffer +
+  //     readedAmount,
+  //                       bytesToRead - readedAmount, 0)) < 0) {
+  //       close(client->socketFD);
+  //       free(littleBuffer);
+  //     }
+  //     readedAmount += count;
 
-  // ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
-  // if (cliRecv < 0) {
-  //   perror("client: recv() error");
-  //   return 0;
+  //     sizeFile -= bytesToRead;
+  //   }
+  // }
+  // free(littleBuffer);
+
+  // char buff[1024];
+  // size_t readedBytes;
+  // while((readedBytes = fread(buff, 1, 1024, file)) > 0) {
+  //   if(send(client->socketFD, buff, readedBytes, 0) < 0 ) {
+  //     perror("client: sending()");
+  //     return -1;
+  //   }
   // }
 
-  // printf("client: server's msg: '%s'\n", srvMsg);
+  char srvMsg[200];
+  memset(srvMsg, '\0', sizeof(srvMsg));
+
+  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
+  if (cliRecv < 0) {
+    perror("client: recv() error");
+    return 0;
+  }
+
+  printf("client: server's msg: '%s'\n", srvMsg);
 
   close(client->socketFD);
 

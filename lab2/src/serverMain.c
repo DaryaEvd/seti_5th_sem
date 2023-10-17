@@ -34,14 +34,15 @@ void *connectionFunc(void *arg) {
          fileNameFromClient);
 
   ssize_t fileSizeFromClient;
+  // long fileSizeFromClient;
   int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
                             sizeof(fileSizeFromClient), 0);
-  if (clientRecvName < 0) {
+  if (clientRecvSize < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
 
-  printf("server: Msg from client (filesize): '%ld'\n",
+  printf("server: Msg from client (filesize): '%ld' bytes\n",
          fileSizeFromClient);
 
   FILE *fileToRecv = NULL;
@@ -52,27 +53,85 @@ void *connectionFunc(void *arg) {
     fileToRecv = fopen(output, "wb");
   }
 
-  unsigned char clientMess[1024];
-  size_t readedSize = 0;
-  size_t numBytesRecv = 0;
+  ssize_t sizeOfLittleBuffer = 4096;
+  unsigned char clientMessBuffer[sizeOfLittleBuffer];
+  ssize_t readedSize = 0;
+  ssize_t numBytesRecv = 0;
 
-  while (readedSize != numBytesRecv) {
-    ssize_t chunkReadedBytes =
-        recv(conn->socketFD, clientMess, 1024, 0);
-    readedSize += chunkReadedBytes;
+  // while (1) {
+  //   ssize_t bytesToRead = (fileSizeFromClient > sizeOfLittleBuffer)
+  //                             ? sizeOfLittleBuffer
+  //                             : fileSizeFromClient;
+  //   if (bytesToRead < 0) {
+  //     break;
+  //   }
 
-    fwrite(clientMess, 1, readedSize, fileToRecv);
+  //   ssize_t readedAmount = 0;
+  //   while (readedAmount != bytesToRead) {
+  //     ssize_t count;
+  //     if ((count = recv(conn->socketFD, clientMessBuffer +
+  //     readedAmount,
+  //                       fileSizeFromClient - readedSize, 0)) < 0) {
+  //       printf("nerkjnege\n");
+  //       pthread_exit(0);
+  //     }
+
+  //     readedAmount += count;
+  //   }
+
+  //   ssize_t writedAmount = 0;
+  //   while (writedAmount != bytesToRead) {
+  //     ssize_t count;
+  //     if ((count = fwrite(clientMessBuffer, 1, bytesToRead -
+  //     writedAmount,
+  //                         fileToRecv)) < 0) {
+  //       printf("less 0\n");
+  //       pthread_exit(0);
+  //     }
+  //   }
+  //   fileSizeFromClient -= bytesToRead;
+  // }
+
+  int file_size, bytes_received = 0, total_bytes = 0;
+  char buffer[1024];
+
+  // Receive file contents and write to file
+  while (total_bytes < file_size) {
+    bytes_received =
+        recv(conn->socketFD, buffer, 1024, 0);
+    fwrite(buffer, 1, bytes_received, fileToRecv);
+    total_bytes += bytes_received;
+
+    
   }
 
   printf("server: path to a file: '%s'\n", output);
 
   // strcpy(srvMsg, "server servak");
 
-  // int clientSend = send(conn->socketFD, srvMsg, strlen(srvMsg),
-  // 0); if (clientSend < 0) {
-  //   perror("server: send() error");
-  //   return 0;
-  // }
+  char isSameSize[200];
+  memset(isSameSize, '\0', sizeof(isSameSize));
+
+  printf("readed size is: %ld\n", readedSize);
+
+  if (readedSize == fileSizeFromClient) {
+    strcpy(isSameSize, "succesfull downloading");
+  } else {
+    strcpy(isSameSize, "sizes are different");
+    // : %d, %d", readedSize, fileSizeFromClient);
+  }
+
+  // const ssize_t fileeLength = readedSize;
+
+  printf("readed size is '%ld', fileSize is '%ld' \n", readedSize,
+         fileSizeFromClient);
+
+  int clientSend =
+      send(conn->socketFD, isSameSize, strlen(isSameSize), 0);
+  if (clientSend < 0) {
+    perror("server: send() error");
+    return 0;
+  }
 
   // printf("server: already sent this msg: '%s'\n", srvMsg);
   // */
@@ -81,10 +140,18 @@ void *connectionFunc(void *arg) {
     struct sockaddr_in *sin = (struct sockaddr_in *)conn;
     int portClient = sin->sin_port;
     char buffer[20];
-    inet_ntop(AF_INET, &sin->sin_addr.s_addr, buffer, sizeof(buffer));
-    printf("server: accepted from port #%d and ip addr '%s'\n",
-           portClient, buffer);
+    // inet_ntop(AF_INET, &sin->sin_addr.s_addr, buffer,
+    // sizeof(buffer)); printf("server: accepted from port #%d and
+    // ip addr '%s'\n",
+    //        portClient, buffer);
+    printf("server: successfully got file from '%s' addr and '%d' "
+           "port",
+           inet_ntoa(sin->sin_addr), ntohs(sin->sin_port));
   }
+
+  struct sockaddr_in *sin = (struct sockaddr_in *)conn;
+  printf("server: successfully got file from '%s' addr and '%d' port",
+         inet_ntoa(sin->sin_addr), ntohs(sin->sin_port));
 
   close(conn->socketFD);
   free(conn);
