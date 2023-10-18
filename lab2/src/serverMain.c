@@ -1,3 +1,5 @@
+#include "stuff.h"
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <error.h>
@@ -51,12 +53,14 @@ void *connectionFunc(void *arg) {
     pthread_exit(NULL);
   }
 
-  printf("server: Msg from client (filesize): '%ld' bytes\n",
-         fileSizeFromClient);
+  printf(
+      "server: Msg from client (filesize): '%ld' bytes\n", // in
+                                                           // mBytes
+      fileSizeFromClient);
   pthread_mutex_unlock(&mutexSize);
 
   FILE *fileToRecv = NULL;
-  char outputFilePath[PATH_LENGTH] = "../uploads/";
+  char outputFilePath[PATH_LENGTH] = "../build/uploads/";
   strcat(outputFilePath, fileNameFromClient);
   fileToRecv = fopen(outputFilePath, "wb+");
 
@@ -124,13 +128,11 @@ int main(int argc, char **argv) {
 
   int portNum = atoi(argv[1]);
 
-  char *pathToDirToUploadFiles = "../uploads";
-  struct stat st = {0};
-  if (stat(pathToDirToUploadFiles, &st) == -1) {
-    printf("server: creating an 'uploads' folder\n");
-    mkdir(pathToDirToUploadFiles, 0700);
-  } else {
-    printf("server: 'uploads' folder already exists\n");
+  char *pathToDirToUploadFiles = "../build/uploads";
+
+  int statusCreatingDir = createDir(pathToDirToUploadFiles);
+  if (statusCreatingDir == -1) {
+    return -1;
   }
 
   int serverSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
@@ -159,7 +161,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int maxAmountConnection = 4;
+  int maxAmountConnection = 4; //&!&!&!&&!
   if (listen(serverSocketFileDescr, maxAmountConnection) < 0) {
     perror("listen() error");
     return -1;
@@ -174,6 +176,7 @@ int main(int argc, char **argv) {
 
   pthread_t threadID[maxAmountConnection];
 
+  // while(1)
   for (size_t i = 0; i < maxAmountConnection; i++) {
     connection = (connection_t *)malloc(sizeof(connection_t));
     connection->address.sa_family = AF_INET;

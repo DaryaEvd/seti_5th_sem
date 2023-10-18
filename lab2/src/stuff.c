@@ -1,8 +1,11 @@
 #include "stuff.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 int isExistingFile(const char *path) {
@@ -51,4 +54,20 @@ long countSizeFile(FILE *file) {
   printf("size file: '%ld' bytes\n", sizeFile);
   rewind(file);
   return sizeFile;
+}
+
+int createDir(const char *path) {
+  struct stat st = {0};
+  if (stat(path, &st) == -1) {
+    printf("server: creating an 'uploads' folder\n");
+    if (mkdir(path, S_IROTH | S_IWOTH | S_IXOTH | S_IRUSR | S_IWUSR |
+                        S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP) ==
+        -1) {
+      printf("Error: %s\n", strerror(errno));
+      return -1;
+    }
+  } else {
+    printf("server: 'uploads' folder already exists\n");
+  }
+  return 0;
 }

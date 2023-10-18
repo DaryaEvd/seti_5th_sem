@@ -5,6 +5,7 @@ find_package (Threads)
 
 add_executable(server
         src/serverMain.c
+        src/stuff.c
 )
 
 add_executable(client 

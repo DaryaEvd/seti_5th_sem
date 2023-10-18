@@ -35,14 +35,19 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  FILE *file = fopen(fullPathToFileToSend, "rb");
+  if (file == NULL) {
+    perror("reading file error");
+    return -1;
+  }
+
+  long sizeFile = countSizeFile(file);
   char *extractedFileName = extractLastToken(fullPathToFileToSend);
   if (!isValidFileNameLength(extractedFileName)) {
     return -1;
   }
 
-  if (!isValidFileNameLength(extractedFileName)) {
-    return -1;
-  }
+  //  format utf-8 ???
 
   printf("file name '%s'\n", extractedFileName);
 
@@ -66,7 +71,7 @@ int main(int argc, char **argv) {
   }
 
   client->address.sin_addr.s_addr = inet_addr(addressIP);
-  client->address.sin_family = AF_INET;
+  client->address.sin_family = AF_INET; // why not ipv6?
   client->address.sin_port = htons(portNum);
 
   if (connect(client->socketFD, (struct sockaddr *)&client->address,
@@ -76,15 +81,6 @@ int main(int argc, char **argv) {
   }
 
   printf("client connected\n");
-
-  FILE *file = fopen(fullPathToFileToSend, "rb");
-  if (file == NULL) {
-    free(client);
-    perror("reading file error");
-    return -1;
-  }
-
-  long sizeFile = countSizeFile(file);
 
   if (send(client->socketFD, extractedFileName,
            strlen(extractedFileName) + 1, 0) < 0) {
@@ -112,9 +108,15 @@ int main(int argc, char **argv) {
   ssize_t cliRecv =
       recv(client->socketFD, msgFromServer, sizeof(msgFromServer), 0);
   if (cliRecv < 0) {
+    close(client->socketFD);
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     perror("client: recv() error");
     return 0;
   }
+
   printf("client: server's msg: '%s'\n", msgFromServer);
 
   close(client->socketFD);
