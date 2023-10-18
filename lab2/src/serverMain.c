@@ -14,6 +14,8 @@
 #define SIZE 4096 * 4
 #define LENGTH_INFO 100
 
+pthread_mutex_t mutexAverageSpeed;
+
 typedef struct {
   int socketFD;
   struct sockaddr address;
@@ -37,6 +39,7 @@ void *connectionFunc(void *arg) {
          fileNameFromClient);
 
   long fileSizeFromClient = 0;
+
   int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
                             sizeof(fileSizeFromClient), 0);
   if (clientRecvSize < 0) {
@@ -51,7 +54,7 @@ void *connectionFunc(void *arg) {
 
   char outputFilePath[4096] = "../uploads/";
   strcat(outputFilePath, fileNameFromClient);
-  fileToRecv = fopen(outputFilePath, "wb");
+  fileToRecv = fopen(outputFilePath, "wb+");
 
   char buffer[SIZE];
   long receivedBytes = 0;
@@ -59,6 +62,7 @@ void *connectionFunc(void *arg) {
   double averageSpeed = 0.0;
   double timeElapsed = 0.0;
   time_t startTime = time(NULL);
+
   while (receivedBytes < fileSizeFromClient) {
     int readBytes = recv(conn->socketFD, buffer, SIZE, 0);
     if (readBytes < 0) {
@@ -68,11 +72,15 @@ void *connectionFunc(void *arg) {
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
     receivedBytes += readBytes;
-    speed = (double)receivedBytes / (time(NULL) - startTime);
-    averageSpeed = (double)receivedBytes / (timeElapsed + 3.0);
-    printf("Instantaneous speed: %lf bytes/sec\n", speed);
-    printf("Average speed per session: %lf bytes/sec\n",
+    speed = (double)receivedBytes / 1024 / (time(NULL) - startTime);
+    printf("Instantaneous speed: %lf kBytes/sec\n", speed);
+
+    pthread_mutex_lock(&mutexAverageSpeed);
+    double averageSpeed =
+        (double)receivedBytes / 1024 / (timeElapsed + 3.0);
+    printf("Average speed per session: %lf kBytes/sec\n",
            averageSpeed);
+    pthread_mutex_unlock(&mutexAverageSpeed);
 
     timeElapsed += 3.0;
 
@@ -115,6 +123,8 @@ int main(int argc, char **argv) {
   if (stat(pathToDirToUploadFiles, &st) == -1) {
     printf("server: creating an 'uploads' folder\n");
     mkdir(pathToDirToUploadFiles, 0700);
+  } else {
+    printf("server: 'uploads' folder already exists\n");
   }
 
   int serverSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
@@ -156,9 +166,9 @@ int main(int argc, char **argv) {
 
   connection_t *connection;
 
-  pthread_t thread;
+  pthread_t threadID[maxAmountConnection];
 
-  while (1) {
+  for (size_t i = 0; i < maxAmountConnection; i++) {
     connection = (connection_t *)malloc(sizeof(connection_t));
     connection->address.sa_family = AF_INET;
     connection->socketFD =
@@ -169,10 +179,30 @@ int main(int argc, char **argv) {
       perror("server: accept() error");
       return -1;
     } else {
-      pthread_create(&thread, 0, connectionFunc, (void *)connection);
-      pthread_detach(thread);
+      pthread_create(&threadID[i], 0, connectionFunc, (void *)connection);
+      
     }
   }
+
+  for(size_t j = 0; j < maxAmountConnection; j++) {
+    pthread_join(threadID[j], NULL);
+  }
+
+  // while (1) {
+  //   connection = (connection_t *)malloc(sizeof(connection_t));
+  //   connection->address.sa_family = AF_INET;
+  //   connection->socketFD =
+  //       accept(serverSocketFileDescr, &connection->address,
+  //              &connection->lengthAddr);
+  //   if (connection->socketFD < 0) {
+  //     free(connection);
+  //     perror("server: accept() error");
+  //     return -1;
+  //   } else {
+  //     pthread_create(&thread, 0, connectionFunc, (void
+  //     *)connection); pthread_detach(thread);
+  //   }
+  // }
 
   free(connection);
   close(serverSocketFileDescr);
