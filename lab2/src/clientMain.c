@@ -9,42 +9,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "stuff.h"
+
 #define SIZE 4096 * 4
 #define MSG_LENGTH 100
+#define CLIENT_LENGTH 4096
 
-typedef struct clientInfo {
+typedef struct ClientInfo {
   int socketFD;
   struct sockaddr_in address;
 } clientInfo;
-
-char *extractLastToken(const char *inputPathToFile) {
-  int amountSymbolsInLastToken = 0;
-
-  for (int i = strlen(inputPathToFile) - 1; i > 0; i--) {
-    if (inputPathToFile[i] == '/') {
-      break;
-    }
-    amountSymbolsInLastToken++;
-  }
-
-  char *lastToken =
-      calloc(amountSymbolsInLastToken + 1, sizeof(char));
-
-  for (int i = 0; i < amountSymbolsInLastToken; i++) {
-    lastToken[i] = inputPathToFile[i + (strlen(inputPathToFile) -
-                                        amountSymbolsInLastToken)];
-  }
-
-  return lastToken;
-}
-
-long countSizeFile(FILE *file) {
-  fseek(file, 0L, SEEK_END);
-  long sizeFile = ftell(file);
-  printf("size file: '%ld' bytes\n", sizeFile);
-  rewind(file);
-  return sizeFile;
-}
 
 int main(int argc, char **argv) {
   if (argc != 4) {
@@ -57,16 +31,16 @@ int main(int argc, char **argv) {
   }
 
   char *fullPathToFileToSend = argv[1];
-  if (access(fullPathToFileToSend, F_OK) != 0) {
-    perror("error in access: ");
+  if (!isExistingFile(fullPathToFileToSend)) {
     return -1;
   }
 
   char *extractedFileName = extractLastToken(fullPathToFileToSend);
+  if (!isValidFileNameLength(extractedFileName)) {
+    return -1;
+  }
 
-  if (strlen(extractedFileName) > sizeof(char) * 4096) {
-    printf("Your filename is too long. Rename it or give another "
-           "one\n");
+  if (!isValidFileNameLength(extractedFileName)) {
     return -1;
   }
 
@@ -97,7 +71,6 @@ int main(int argc, char **argv) {
 
   if (connect(client->socketFD, (struct sockaddr *)&client->address,
               sizeof(client->address)) != 0) {
-
     perror("client: connect() error");
     return -1;
   }

@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #define SIZE 4096 * 4
+#define LENGTH_INFO 100
 
 typedef struct {
   int socketFD;
@@ -22,11 +23,11 @@ typedef struct {
 void *connectionFunc(void *arg) {
   connection_t *conn = (connection_t *)arg;
 
-  char fileNameFromClient[200];
+  char fileNameFromClient[LENGTH_INFO];
   memset(fileNameFromClient, '\0', sizeof(fileNameFromClient));
 
   int clientRecvName = recv(conn->socketFD, fileNameFromClient,
-                            sizeof(fileNameFromClient), 0); /// +1
+                            sizeof(fileNameFromClient), 0);
   if (clientRecvName < 0) {
     perror("server: recv() fileName error");
     pthread_exit(NULL);
@@ -42,16 +43,15 @@ void *connectionFunc(void *arg) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
-  long sizeFile = fileSizeFromClient;
 
   printf("server: Msg from client (filesize): '%ld' bytes\n",
          fileSizeFromClient);
 
   FILE *fileToRecv = NULL;
 
-  char output[4096] = "../uploads/";
-  strcat(output, fileNameFromClient);
-  fileToRecv = fopen(output, "wb");
+  char outputFilePath[4096] = "../uploads/";
+  strcat(outputFilePath, fileNameFromClient);
+  fileToRecv = fopen(outputFilePath, "wb");
 
   char buffer[SIZE];
   long receivedBytes = 0;
@@ -59,7 +59,7 @@ void *connectionFunc(void *arg) {
   double averageSpeed = 0.0;
   double timeElapsed = 0.0;
   time_t startTime = time(NULL);
-  while (receivedBytes < sizeFile) { // filesize
+  while (receivedBytes < fileSizeFromClient) {
     int readBytes = recv(conn->socketFD, buffer, SIZE, 0);
     if (readBytes < 0) {
       perror("error in recv: ");
@@ -70,7 +70,7 @@ void *connectionFunc(void *arg) {
     receivedBytes += readBytes;
     speed = (double)receivedBytes / (time(NULL) - startTime);
     averageSpeed = (double)receivedBytes / (timeElapsed + 3.0);
-    printf("Instantaneous reception speed: %lf bytes/sec\n", speed);
+    printf("Instantaneous speed: %lf bytes/sec\n", speed);
     printf("Average speed per session: %lf bytes/sec\n",
            averageSpeed);
 
@@ -137,7 +137,6 @@ int main(int argc, char **argv) {
   serverAddr.sin_addr.s_addr = INADDR_ANY;
   serverAddr.sin_port = htons(portNum);
 
-  // bind
   if (bind(serverSocketFileDescr, (struct sockaddr *)&serverAddr,
            sizeof(serverAddr)) < 0) {
     perror("server: bind() error");
@@ -171,7 +170,7 @@ int main(int argc, char **argv) {
       return -1;
     } else {
       pthread_create(&thread, 0, connectionFunc, (void *)connection);
-      pthread_join(thread, NULL);
+      pthread_detach(thread);
     }
   }
 
