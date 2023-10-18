@@ -1,5 +1,10 @@
 ## Copy finder  
 
+### Task  
+Develop an application that finds copies of itself on a local network using UDP multicast messaging. The inclusion should record the moments of display and lose other copies of itself on the local network and, when changes occur, display a list of IP addresses of “live” copies.  
+
+The address of the multicast group must be passed as a parameter to the application. The application must support operation in both IPv4 and IPv6 networks, automatically selecting a protocol depending on the transmitted group address.  
+
 ### How to compile 
 
 from dir `lab1` :  
