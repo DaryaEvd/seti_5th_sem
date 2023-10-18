@@ -13,8 +13,11 @@
 
 #define SIZE 4096 * 4
 #define LENGTH_INFO 100
+#define PATH_LENGTH 4096
+#define GET_KBYTES 1024
 
 pthread_mutex_t mutexAverageSpeed;
+pthread_mutex_t mutexSize;
 
 typedef struct {
   int socketFD;
@@ -38,6 +41,7 @@ void *connectionFunc(void *arg) {
   printf("server: Msg from client (filename): '%s'\n",
          fileNameFromClient);
 
+  pthread_mutex_lock(&mutexSize);
   long fileSizeFromClient = 0;
 
   int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
@@ -49,10 +53,10 @@ void *connectionFunc(void *arg) {
 
   printf("server: Msg from client (filesize): '%ld' bytes\n",
          fileSizeFromClient);
+  pthread_mutex_unlock(&mutexSize);
 
   FILE *fileToRecv = NULL;
-
-  char outputFilePath[4096] = "../uploads/";
+  char outputFilePath[PATH_LENGTH] = "../uploads/";
   strcat(outputFilePath, fileNameFromClient);
   fileToRecv = fopen(outputFilePath, "wb+");
 
@@ -72,12 +76,14 @@ void *connectionFunc(void *arg) {
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
     receivedBytes += readBytes;
-    speed = (double)receivedBytes / 1024 / (time(NULL) - startTime);
+    speed =
+        (double)receivedBytes / GET_KBYTES / (time(NULL) - startTime);
+    printf("[%s] ,", fileNameFromClient);
     printf("Instantaneous speed: %lf kBytes/sec\n", speed);
 
     pthread_mutex_lock(&mutexAverageSpeed);
     double averageSpeed =
-        (double)receivedBytes / 1024 / (timeElapsed + 3.0);
+        (double)receivedBytes / GET_KBYTES / (timeElapsed + 3.0);
     printf("Average speed per session: %lf kBytes/sec\n",
            averageSpeed);
     pthread_mutex_unlock(&mutexAverageSpeed);
@@ -87,7 +93,7 @@ void *connectionFunc(void *arg) {
     sleep(3);
   }
 
-  char response[200];
+  char response[LENGTH_INFO];
   memset(response, '\0', sizeof(response));
 
   if (receivedBytes == fileSizeFromClient) {
@@ -179,30 +185,14 @@ int main(int argc, char **argv) {
       perror("server: accept() error");
       return -1;
     } else {
-      pthread_create(&threadID[i], 0, connectionFunc, (void *)connection);
-      
+      pthread_create(&threadID[i], 0, connectionFunc,
+                     (void *)connection);
     }
   }
 
-  for(size_t j = 0; j < maxAmountConnection; j++) {
+  for (size_t j = 0; j < maxAmountConnection; j++) {
     pthread_join(threadID[j], NULL);
   }
-
-  // while (1) {
-  //   connection = (connection_t *)malloc(sizeof(connection_t));
-  //   connection->address.sa_family = AF_INET;
-  //   connection->socketFD =
-  //       accept(serverSocketFileDescr, &connection->address,
-  //              &connection->lengthAddr);
-  //   if (connection->socketFD < 0) {
-  //     free(connection);
-  //     perror("server: accept() error");
-  //     return -1;
-  //   } else {
-  //     pthread_create(&thread, 0, connectionFunc, (void
-  //     *)connection); pthread_detach(thread);
-  //   }
-  // }
 
   free(connection);
   close(serverSocketFileDescr);
