@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  //  TODO
   //  format utf-8 ???
 
   printf("file name '%s'\n", extractedFileName);
@@ -71,7 +72,7 @@ int main(int argc, char **argv) {
   }
 
   client->address.sin_addr.s_addr = inet_addr(addressIP);
-  client->address.sin_family = AF_INET; // why not ipv6?
+  client->address.sin_family = AF_INET; // TODO: why not ipv6?
   client->address.sin_port = htons(portNum);
 
   if (connect(client->socketFD, (struct sockaddr *)&client->address,

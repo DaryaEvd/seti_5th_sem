@@ -3,6 +3,7 @@
 ### Task  
 The task is to develop a protocol for transferring a randomly file from one computer to another, and write a client and server that implement this protocol. 
 The server must also display the rate at which data is being received from the client.  
+
 #### Requirements  
 1. The server is passed in the parameters the port number on which it will wait for incoming connections from clients.  
 2. The client is passed in the parameters a relative or absolute path to the file that needs to be sent. The file name length does not exceed 4096 bytes in UTF-8 encoding.   

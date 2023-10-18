@@ -54,7 +54,8 @@ void *connectionFunc(void *arg) {
   }
 
   printf(
-      "server: Msg from client (filesize): '%ld' bytes\n", // in
+      "server: Msg from client (filesize): '%ld' bytes\n", // TODO :
+                                                           // in
                                                            // mBytes
       fileSizeFromClient);
   pthread_mutex_unlock(&mutexSize);
@@ -176,7 +177,7 @@ int main(int argc, char **argv) {
 
   pthread_t threadID[maxAmountConnection];
 
-  // while(1)
+  // while(1) //TODO
   for (size_t i = 0; i < maxAmountConnection; i++) {
     connection = (connection_t *)malloc(sizeof(connection_t));
     connection->address.sa_family = AF_INET;
