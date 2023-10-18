@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SIZE 1024
+#define SIZE 4096 * 4
 
 typedef struct {
   int socketFD;
@@ -26,7 +26,7 @@ void *connectionFunc(void *arg) {
   memset(fileNameFromClient, '\0', sizeof(fileNameFromClient));
 
   int clientRecvName = recv(conn->socketFD, fileNameFromClient,
-                            sizeof(fileNameFromClient), 0);
+                            sizeof(fileNameFromClient), 0); /// +1
   if (clientRecvName < 0) {
     perror("server: recv() fileName error");
     pthread_exit(NULL);
@@ -35,76 +35,54 @@ void *connectionFunc(void *arg) {
   printf("server: Msg from client (filename): '%s'\n",
          fileNameFromClient);
 
-  long fileSizeFromClient;
+  long fileSizeFromClient = 0;
   int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
                             sizeof(fileSizeFromClient), 0);
   if (clientRecvSize < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
+  long sizeFile = fileSizeFromClient;
 
   printf("server: Msg from client (filesize): '%ld' bytes\n",
          fileSizeFromClient);
-  long sizeFile = fileSizeFromClient;
 
   FILE *fileToRecv = NULL;
 
   char output[4096] = "../uploads/";
-  if (fileToRecv == NULL) {
-    strcat(output, fileNameFromClient);
-    fileToRecv = fopen(output, "wb");
-  }
+  strcat(output, fileNameFromClient);
+  fileToRecv = fopen(output, "wb");
 
-  // char buffer[SIZE];
-  // long totalBytes = 0;
-  // while (1) {
-  //   long n = recv(conn->socketFD, buffer, SIZE, 0);
-  //   totalBytes += n;
-  //   if (n <= 0) {
-  //     printf("alohaajskdhflajshfa\n");
-  //     break;
-  //     // return NULL;
-  //   }
-  //   fprintf(fileToRecv, "%s", buffer);
-  //   bzero(buffer, SIZE);
-  // }
-  // printf("arhfaelhalef\n");
-
-  long totalBytes = 0;
-  long sizeLittleBuffer = 1024;
-  char littleBuffer[sizeLittleBuffer];
-  while (1) {
-    long bytesToRead = (fileSizeFromClient > sizeLittleBuffer)
-                           ? sizeLittleBuffer
-                           : fileSizeFromClient;
-    if (bytesToRead <= 0) {
-      break;
+  char buffer[SIZE];
+  long receivedBytes = 0;
+  double speed = 0.0;
+  double averageSpeed = 0.0;
+  double timeElapsed = 0.0;
+  time_t startTime = time(NULL);
+  while (receivedBytes < sizeFile) { // filesize
+    int readBytes = recv(conn->socketFD, buffer, SIZE, 0);
+    if (readBytes < 0) {
+      perror("error in recv: ");
+      return NULL;
     }
-    long writedAmount = 0;
-    while (writedAmount != bytesToRead) {
-      long count;
-      if ((count = recv(conn->socketFD, littleBuffer + writedAmount,
-                        bytesToRead - writedAmount, 0)) < 0) {
-        pthread_exit(NULL);
-      }
-      fwrite(littleBuffer + writedAmount, 1, count, fileToRecv);
+    fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
-      writedAmount += count;
-    }
+    receivedBytes += readBytes;
+    speed = (double)receivedBytes / (time(NULL) - startTime);
+    averageSpeed = (double)receivedBytes / (timeElapsed + 3.0);
+    printf("Instantaneous reception speed: %lf bytes/sec\n", speed);
+    printf("Average speed per session: %lf bytes/sec\n",
+           averageSpeed);
 
-    fileSizeFromClient -= bytesToRead;
-    totalBytes += bytesToRead;
-    if (fileSizeFromClient <= 0) {
-      break;
-    }
+    timeElapsed += 3.0;
+
+    sleep(3);
   }
 
   char response[200];
   memset(response, '\0', sizeof(response));
-  printf("total bytes: %ld\n", totalBytes);
-  printf("filesize %ld\n", sizeFile);
 
-  if (totalBytes == sizeFile) {
+  if (receivedBytes == fileSizeFromClient) {
     strcpy(response, "sizes are the same");
   } else {
     strcpy(response, "sizes are different");
@@ -117,9 +95,10 @@ void *connectionFunc(void *arg) {
   }
   printf("server: result is: '%s' \n", response);
 
+  fclose(fileToRecv);
   close(conn->socketFD);
   free(conn);
-  pthread_exit(0);
+  return NULL;
 }
 
 int main(int argc, char **argv) {
@@ -177,7 +156,6 @@ int main(int argc, char **argv) {
   memset(&clientAddr, 0, sizeof(clientAddr));
 
   connection_t *connection;
-  // connection->lengthAddr = sizeof(struct sockaddr_in);
 
   pthread_t thread;
 
@@ -193,10 +171,11 @@ int main(int argc, char **argv) {
       return -1;
     } else {
       pthread_create(&thread, 0, connectionFunc, (void *)connection);
-      pthread_detach(thread);
+      pthread_join(thread, NULL);
     }
   }
 
+  free(connection);
   close(serverSocketFileDescr);
   return 0;
 }

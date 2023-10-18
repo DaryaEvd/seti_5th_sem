@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SIZE 1024
+#define SIZE 4096 * 4
 
 typedef struct clientInfo {
   int socketFD;
@@ -122,45 +122,16 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  // char data[SIZE] = {0};
-  // while (fgets(data, SIZE, file) != NULL) {
-  //   if (send(client->socketFD, data, sizeof(data), 0) == -1) {
-  //     perror("client: send() error file");
-  //     exit(1);
-  //   }
-  //   bzero(data, SIZE);
-  // }
+  char buffer[SIZE];
+  int readBytes = fread(buffer, sizeof(char), SIZE, file);
 
-  long sizeLittleBuffer = 1024;
-  char littleBuffer[sizeLittleBuffer];
-
-  while (1) {
-    long bytesToRead =
-        (sizeFile > sizeLittleBuffer) ? sizeLittleBuffer : sizeFile;
-    if (bytesToRead <= 0) {
-      break;
+  while (readBytes > 0) {
+    if (send(client->socketFD, buffer, readBytes, 0) < 0) {
+      perror("error in send: ");
+      return -1;
     }
-
-    long readedAmount = 0;
-    while (readedAmount != bytesToRead) {
-      long count;
-      if ((count = send(client->socketFD, littleBuffer + readedAmount,
-                        bytesToRead - readedAmount, 0)) < 0) {
-        return -1;
-      }
-      readedAmount += count;
-    }
-    sizeFile -= bytesToRead;
+    readBytes = fread(buffer, sizeof(char), SIZE, file);
   }
-
-  // char buff[SIZE] = {0};
-  // long readed;
-  // while((readed = fread(buff, 1, BUFSIZ, file) > 0)){
-  //   if(send(client->socketFD, buff, readed, 0) != readed) {
-  //     perror("sending part error");
-  //     return -1;
-  //   }
-  // }
 
   char srvMsg[200];
   memset(srvMsg, '\0', sizeof(srvMsg));
@@ -170,9 +141,11 @@ int main(int argc, char **argv) {
     return 0;
   }
   printf("client: server's msg: '%s'\n", srvMsg);
-  // */
 
   close(client->socketFD);
+  free(client);
+  fclose(file);
+  free(extractedFileName);
 
   return 0;
 }
