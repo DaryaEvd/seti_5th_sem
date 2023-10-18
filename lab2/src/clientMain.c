@@ -10,12 +10,11 @@
 #include <unistd.h>
 
 #define SIZE 4096 * 4
+#define MSG_LENGTH 100
 
 typedef struct clientInfo {
   int socketFD;
   struct sockaddr_in address;
-  char *fileName;
-  long sizeFile;
 } clientInfo;
 
 char *extractLastToken(const char *inputPathToFile) {
@@ -37,6 +36,14 @@ char *extractLastToken(const char *inputPathToFile) {
   }
 
   return lastToken;
+}
+
+long countSizeFile(FILE *file) {
+  fseek(file, 0L, SEEK_END);
+  long sizeFile = ftell(file);
+  printf("size file: '%ld' bytes\n", sizeFile);
+  rewind(file);
+  return sizeFile;
 }
 
 int main(int argc, char **argv) {
@@ -104,12 +111,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  fseek(file, 0L, SEEK_END);
-  long sizeFile = ftell(file);
-  printf("size file: '%ld' bytes\n", sizeFile);
-  rewind(file);
-
-  client->sizeFile = sizeFile;
+  long sizeFile = countSizeFile(file);
 
   if (send(client->socketFD, extractedFileName,
            strlen(extractedFileName) + 1, 0) < 0) {
@@ -124,7 +126,6 @@ int main(int argc, char **argv) {
 
   char buffer[SIZE];
   int readBytes = fread(buffer, sizeof(char), SIZE, file);
-
   while (readBytes > 0) {
     if (send(client->socketFD, buffer, readBytes, 0) < 0) {
       perror("error in send: ");
@@ -133,14 +134,15 @@ int main(int argc, char **argv) {
     readBytes = fread(buffer, sizeof(char), SIZE, file);
   }
 
-  char srvMsg[200];
-  memset(srvMsg, '\0', sizeof(srvMsg));
-  ssize_t cliRecv = recv(client->socketFD, srvMsg, sizeof(srvMsg), 0);
+  char msgFromServer[MSG_LENGTH];
+  memset(msgFromServer, '\0', sizeof(msgFromServer));
+  ssize_t cliRecv =
+      recv(client->socketFD, msgFromServer, sizeof(msgFromServer), 0);
   if (cliRecv < 0) {
     perror("client: recv() error");
     return 0;
   }
-  printf("client: server's msg: '%s'\n", srvMsg);
+  printf("client: server's msg: '%s'\n", msgFromServer);
 
   close(client->socketFD);
   free(client);
