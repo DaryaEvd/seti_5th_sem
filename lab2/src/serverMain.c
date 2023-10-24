@@ -20,6 +20,7 @@
 
 pthread_mutex_t mutexAverageSpeed;
 pthread_mutex_t mutexSize;
+pthread_mutex_t downloadFile;
 
 typedef struct {
   int socketFD;
@@ -63,8 +64,6 @@ void *connectionFunc(void *arg) {
          precision, (double)mBytesFile);
   pthread_mutex_unlock(&mutexSize);
 
-  // TODO: чо делать с файлом если с таким названием уже есть?
-
   FILE *fileToRecv = NULL;
   char outputFilePath[PATH_LENGTH] = "../build/uploads/";
   strcat(outputFilePath, fileNameFromClient);
@@ -85,7 +84,8 @@ void *connectionFunc(void *arg) {
   double timeElapsed = 0.0;
   time_t startTime = time(NULL);
 
-  while (receivedBytes < fileSizeFromClient) {
+  // while (receivedBytes < fileSizeFromClient) {
+  while (receivedBytes < mBytesFile) {
     int readBytes = recv(conn->socketFD, buffer, SIZE, 0);
     if (readBytes < 0) {
       perror("error in recv: ");
@@ -93,15 +93,18 @@ void *connectionFunc(void *arg) {
     }
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
+    pthread_mutex_lock(&downloadFile);
     receivedBytes += readBytes;
+    pthread_mutex_unlock(&downloadFile);
+
     speed = (double)receivedBytes / 1024 / 1024 /
             (time(NULL) - startTime);
     printf("[%s] ,", fileNameFromClient);
     printf("Instantaneous speed: %lf mBytes/sec\n", speed);
 
     pthread_mutex_lock(&mutexAverageSpeed);
-    double averageSpeed =
-        (double)receivedBytes / 1024 / 1024 / (timeElapsed + 3.0);
+    double averageSpeed = (double)receivedBytes / 1024 / 1024 /
+                          (timeElapsed); // + 3.0);
     printf("Average speed per session: %lf mBytes/sec\n",
            averageSpeed);
     pthread_mutex_unlock(&mutexAverageSpeed);
@@ -132,8 +135,6 @@ void *connectionFunc(void *arg) {
   free(conn);
   return NULL;
 }
-
-// TODO: ЧЕК НА УЖЕ ОТПРАВЛЯЕМЫЙ ФАЙЛ
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -207,9 +208,10 @@ int main(int argc, char **argv) {
       pthread_create(&threadID, 0, connectionFunc,
                      (void *)connection);
 
-      pthread_join(threadID, NULL);
+      pthread_detach(threadID);
     }
   }
+
   free(connection);
   close(serverSocketFileDescr);
   return 0;

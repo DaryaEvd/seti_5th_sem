@@ -11,9 +11,15 @@
 
 #include "stuff.h"
 
-#define SIZE 1 * 8 * 1024
 #define MSG_LENGTH 100
 #define CLIENT_LENGTH 4096
+
+#define BYTE 1
+#define KILOBYTE 1024
+#define MEGABYTE 1024 * 1024
+#define GIGABYTE 1024 * 1024 * 1024
+
+#define BUFFER_SIZE 8 * KILOBYTE
 
 typedef struct ClientInfo {
   int socketFD;
@@ -53,6 +59,7 @@ int main(int argc, char **argv) {
   if (!isValidFileNameLength(extractedFileName)) {
     printf("Your filename is too long in UTF-8. Rename it or give "
            "another one\n");
+    fclose(file);
     return -1;
   }
 
@@ -63,10 +70,20 @@ int main(int argc, char **argv) {
 
   clientInfo *client;
   client = (clientInfo *)malloc(sizeof(clientInfo));
+  if(!client){
+    perror("client: malloc() error");
+    fclose(file);
+    return -1;
+  }
 
   client->socketFD = socket(AF_INET, SOCK_STREAM, 0);
   if (client->socketFD == -1) {
     perror("server: socket() error");
+
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     return -1;
   }
 
@@ -74,6 +91,12 @@ int main(int argc, char **argv) {
   if (setsockopt(client->socketFD, SOL_SOCKET, SO_REUSEADDR, &enable,
                  sizeof(int)) < 0) {
     perror("client: setsockopt(SO_REUSEADDR) error");
+
+    close(client->socketFD);
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     return -1;
   }
 
@@ -84,6 +107,12 @@ int main(int argc, char **argv) {
   if (connect(client->socketFD, (struct sockaddr *)&client->address,
               sizeof(client->address)) != 0) {
     perror("client: connect() error");
+
+    close(client->socketFD);
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     return -1;
   }
 
@@ -92,22 +121,42 @@ int main(int argc, char **argv) {
   if (send(client->socketFD, extractedFileName,
            strlen(extractedFileName) + 1, 0) < 0) {
     perror("client: send() fileName error");
+
+    close(client->socketFD);
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     return -1;
   }
 
   if (send(client->socketFD, &sizeFile, sizeof(sizeFile), 0) < 0) {
+    // if (send(client->socketFD, &mBytesFile, sizeof(mBytesFile), 0)
+    // < 0) {
     perror("client: send() size error ");
+
+    close(client->socketFD);
+    free(client);
+    fclose(file);
+    free(extractedFileName);
+
     return -1;
   }
 
-  char buffer[SIZE];
-  int readBytes = fread(buffer, sizeof(char), SIZE, file);
+  char buffer[BUFFER_SIZE];
+  int readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
   while (readBytes > 0) {
     if (send(client->socketFD, buffer, readBytes, 0) < 0) {
       perror("error in send: ");
+
+      close(client->socketFD);
+      free(client);
+      fclose(file);
+      free(extractedFileName);
+
       return -1;
     }
-    readBytes = fread(buffer, sizeof(char), SIZE, file);
+    readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
   }
 
   char msgFromServer[MSG_LENGTH];
