@@ -24,12 +24,11 @@ int isValidFileNameLength(const char *fileName) {
   mbstowcs(wideFileName, fileName, 4096);
 
   int fileNameLength = wcslen(wideFileName);
-  if(fileNameLength > 4096) {
+  if (fileNameLength > 4096) {
     return 0;
   }
   return 1;
 }
-
 
 char *extractLastToken(const char *inputPathToFile) {
   int amountSymbolsInLastToken = 0;
@@ -52,12 +51,19 @@ char *extractLastToken(const char *inputPathToFile) {
   return lastToken;
 }
 
-unsigned long countSizeFile(FILE *file) {
+long long countSizeFile(FILE *file) {
   fseek(file, 0L, SEEK_END);
-  long double sizeFile = ftell(file);
-  // printf("size file: '%ld' kBytes\n", sizeFile / 1024);
+  long long sizeFile = ftell(file);
   rewind(file);
   return sizeFile;
+}
+
+int isValidSizeFile(long long size) {
+  long long terabyte = 1024 * 1024 * 1024 * 1024L;
+  if (size > terabyte) {
+    return 0;
+  }
+  return 1;
 }
 
 int createDir(const char *path) {

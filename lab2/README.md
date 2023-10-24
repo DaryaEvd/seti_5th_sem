@@ -55,3 +55,7 @@ Then a client sends a file's source.
 
 Then server is receiving it. After full downloading server compares amount of received bytes and a file size.  
 If sizes are the same, then server sends a message about it to client and a client prints it.  
+
+### Usefull info  
+The maximum control buffer length the kernel can process is  limited  per socket by the value in 
+`/proc/sys/net/core/optmem_max` (see socket(7))  

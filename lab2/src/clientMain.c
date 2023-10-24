@@ -12,7 +12,6 @@
 #include "stuff.h"
 
 #define MSG_LENGTH 100
-#define CLIENT_LENGTH 4096
 
 #define BYTE 1
 #define KILOBYTE 1024
@@ -50,10 +49,23 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  unsigned long sizeFile = countSizeFile(file);
-  double mBytesFile = (double)sizeFile / 1024 / 1024;
-  int precision = 2;
-  printf("size file: '%.*f mBytes \n'", precision, mBytesFile);
+  long long sizeFileBytes = countSizeFile(file);
+  printf("size file: '%lld' Bytes\n", sizeFileBytes);
+
+  double mBytesFile = 0;
+  if (sizeFileBytes > MEGABYTE) {
+    mBytesFile = (double)sizeFileBytes / KILOBYTE / KILOBYTE;
+    int precision = 2;
+    printf("size file: '%.*f mBytes \n'", precision, mBytesFile);
+  } else {
+    printf("size file: '%lf kBytes\n",
+           (double)sizeFileBytes / KILOBYTE);
+  }
+
+  if (!isValidSizeFile(sizeFileBytes)) {
+    printf("client: Size file is too long\n");
+    return -1;
+  }
 
   char *extractedFileName = extractLastToken(fullPathToFileToSend);
   if (!isValidFileNameLength(extractedFileName)) {
@@ -70,7 +82,7 @@ int main(int argc, char **argv) {
 
   clientInfo *client;
   client = (clientInfo *)malloc(sizeof(clientInfo));
-  if(!client){
+  if (!client) {
     perror("client: malloc() error");
     fclose(file);
     return -1;
@@ -101,7 +113,7 @@ int main(int argc, char **argv) {
   }
 
   client->address.sin_addr.s_addr = inet_addr(addressIP);
-  client->address.sin_family = AF_INET; // TODO: why not ipv6?
+  client->address.sin_family = AF_INET;
   client->address.sin_port = htons(portNum);
 
   if (connect(client->socketFD, (struct sockaddr *)&client->address,
@@ -130,9 +142,8 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  if (send(client->socketFD, &sizeFile, sizeof(sizeFile), 0) < 0) {
-    // if (send(client->socketFD, &mBytesFile, sizeof(mBytesFile), 0)
-    // < 0) {
+  if (send(client->socketFD, &sizeFileBytes, sizeof(2), 0) <
+      0) {
     perror("client: send() size error ");
 
     close(client->socketFD);
@@ -144,10 +155,10 @@ int main(int argc, char **argv) {
   }
 
   char buffer[BUFFER_SIZE];
-  int readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
+  size_t readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
   while (readBytes > 0) {
     if (send(client->socketFD, buffer, readBytes, 0) < 0) {
-      perror("error in send: ");
+      perror("client: error in send() data from file: ");
 
       close(client->socketFD);
       free(client);

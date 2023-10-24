@@ -5,9 +5,9 @@
 
 int isExistingFile(const char *path);
 int isValidFileNameLength(const char *fileName);
-int isValidEncoding(const char *filename);
+int isValidSizeFile(long long size);
 char *extractLastToken(const char *inputPathToFile);
-unsigned long countSizeFile(FILE *file);
+long long countSizeFile(FILE *file);
 int createDir(const char *path);
 
 #endif // STUFF

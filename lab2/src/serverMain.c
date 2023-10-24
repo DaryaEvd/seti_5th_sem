@@ -13,10 +13,20 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SIZE 1 * 8 * 1024
-#define LENGTH_INFO 100
+// #define SIZE 1 * 8 * 1024
+// #define LENGTH_INFO 100
+
+// #define GET_KBYTES 1024
+
+#define MSG_LENGTH 100
 #define PATH_LENGTH 4096
-#define GET_KBYTES 1024
+
+#define BYTE 1
+#define KILOBYTE 1024
+#define MEGABYTE 1024 * 1024
+#define GIGABYTE 1024 * 1024 * 1024
+
+#define BUFFER_SIZE 8 * KILOBYTE
 
 pthread_mutex_t mutexAverageSpeed;
 pthread_mutex_t mutexSize;
@@ -31,7 +41,7 @@ typedef struct {
 void *connectionFunc(void *arg) {
   connection_t *conn = (connection_t *)arg;
 
-  char fileNameFromClient[LENGTH_INFO];
+  char fileNameFromClient[MSG_LENGTH];
   memset(fileNameFromClient, '\0', sizeof(fileNameFromClient));
 
   int clientRecvName = recv(conn->socketFD, fileNameFromClient,
@@ -45,24 +55,26 @@ void *connectionFunc(void *arg) {
          fileNameFromClient);
 
   pthread_mutex_lock(&mutexSize);
-  unsigned long fileSizeFromClient = 0;
+  long long fileSizeFromClient = 0;
 
-  long clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
-                             sizeof(fileSizeFromClient), 0);
+  ssize_t clientRecvSize =
+      recv(conn->socketFD, &fileSizeFromClient, sizeof(2), 0);
   if (clientRecvSize < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
-
-  double mBytesFile = (double)fileSizeFromClient / 1024 / 1024;
-  if (mBytesFile <= 0) {
-    printf("server: Nothing to send, sizeFile is %lf", mBytesFile);
-    pthread_exit(NULL);
-  }
-  int precision = 2;
-  printf("server: Msg from client (filesize): '%.*f' mBytes \n",
-         precision, (double)mBytesFile);
   pthread_mutex_unlock(&mutexSize);
+
+  double mBytesFile = 0;
+  if (fileSizeFromClient > MEGABYTE) {
+    mBytesFile = (double)fileSizeFromClient / KILOBYTE / KILOBYTE;
+    int precision = 2;
+    printf("server: Msg from client (filesize): '%.*f' mBytes \n",
+           precision, (double)mBytesFile);
+  } else {
+    printf("server: Msg from client (filesize): '%lf' kBytes \n",
+           (double)mBytesFile / KILOBYTE);
+  }
 
   FILE *fileToRecv = NULL;
   char outputFilePath[PATH_LENGTH] = "../build/uploads/";
@@ -72,12 +84,13 @@ void *connectionFunc(void *arg) {
     printf("file '%s' will be deleted and rewrited again\n",
            outputFilePath);
     remove(outputFilePath);
-    printf("file '%s' has deleted\n", outputFilePath);
+    printf("file '%s' has deleted and started writing ... \n",
+           outputFilePath);
   }
 
   fileToRecv = fopen(outputFilePath, "wb+");
 
-  char buffer[SIZE];
+  char buffer[BUFFER_SIZE];
   long receivedBytes = 0;
   double speed = 0.0;
   double averageSpeed = 0.0;
@@ -86,10 +99,11 @@ void *connectionFunc(void *arg) {
 
   // while (receivedBytes < fileSizeFromClient) {
   while (receivedBytes < mBytesFile) {
-    int readBytes = recv(conn->socketFD, buffer, SIZE, 0);
+    int readBytes = recv(conn->socketFD, buffer, BUFFER_SIZE, 0);
     if (readBytes < 0) {
       perror("error in recv: ");
-      return NULL;
+      // return NULL;
+      pthread_exit(NULL);
     }
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
@@ -97,15 +111,15 @@ void *connectionFunc(void *arg) {
     receivedBytes += readBytes;
     pthread_mutex_unlock(&downloadFile);
 
-    speed = (double)receivedBytes / 1024 / 1024 /
-            (time(NULL) - startTime);
+    speed =
+        (double)receivedBytes / KILOBYTE / (time(NULL) - startTime);
     printf("[%s] ,", fileNameFromClient);
-    printf("Instantaneous speed: %lf mBytes/sec\n", speed);
+    printf("Instantaneous speed: %lf kBytes/sec\n", speed);
 
     pthread_mutex_lock(&mutexAverageSpeed);
-    double averageSpeed = (double)receivedBytes / 1024 / 1024 /
-                          (timeElapsed); // + 3.0);
-    printf("Average speed per session: %lf mBytes/sec\n",
+    double averageSpeed =
+        (double)receivedBytes / KILOBYTE / (timeElapsed); // + 3.0);
+    printf("Average speed per session: %lf kBytes/sec\n",
            averageSpeed);
     pthread_mutex_unlock(&mutexAverageSpeed);
 
@@ -114,7 +128,7 @@ void *connectionFunc(void *arg) {
     sleep(3);
   }
 
-  char response[LENGTH_INFO];
+  char response[MSG_LENGTH];
   memset(response, '\0', sizeof(response));
 
   if (receivedBytes == fileSizeFromClient) {
@@ -212,7 +226,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  free(connection);
+  // free(connection);
   close(serverSocketFileDescr);
   return 0;
 }
