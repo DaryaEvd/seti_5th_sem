@@ -7,25 +7,29 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <wchar.h>
 
-int isExistingFile(const char *path) {
-  if (access(path, F_OK) != 0) {
-    printf("Such file by this path '%s' doesn't exists. Try to enter "
-           "another file!\n",
-           path);
+int isExistingFile(const char *pathToFile) {
+  if (access(pathToFile, F_OK) != 0) {
     return 0;
   }
-  return 1;
+  return 1; // exists
 }
 
 int isValidFileNameLength(const char *fileName) {
-  if (strlen(fileName) > sizeof(char) * 4096) {
-    printf("Your filename is too long. Rename it or give another "
-           "one\n");
+  struct stat fileInfo;
+  stat(fileName, &fileInfo);
+
+  wchar_t wideFileName[4096];
+  mbstowcs(wideFileName, fileName, 4096);
+
+  int fileNameLength = wcslen(wideFileName);
+  if(fileNameLength > 4096) {
     return 0;
   }
   return 1;
 }
+
 
 char *extractLastToken(const char *inputPathToFile) {
   int amountSymbolsInLastToken = 0;
@@ -48,10 +52,10 @@ char *extractLastToken(const char *inputPathToFile) {
   return lastToken;
 }
 
-long countSizeFile(FILE *file) {
+unsigned long countSizeFile(FILE *file) {
   fseek(file, 0L, SEEK_END);
-  long sizeFile = ftell(file);
-  printf("size file: '%ld' bytes\n", sizeFile);
+  long double sizeFile = ftell(file);
+  // printf("size file: '%ld' kBytes\n", sizeFile / 1024);
   rewind(file);
   return sizeFile;
 }

@@ -22,7 +22,7 @@ Speed here means the number of bytes transferred per unit of time.
 10. The server must be able to work using multithreadings with several clients. 
 To do this, you need to use threads (POSIX threads or their equivalent in your OS).   
 Immediately after accepting a connection from one client, the server waits for further clients.  
-11. If an error occurs, the server must close the connection with the client. At the same time, he must continue to serve other clients.  
+11. If an error occurs, the server must close the connection with the client. At the same time, it must continue to serve other clients.  
 
 ### How to compile 
 
@@ -43,7 +43,7 @@ Multiple clients can send files to server, that stores files in `uploads` dir.
 
 ### How this program works?  
 This code uses TCP protocol.   
-![tcp_pic](./image_tcp.png)  
+![tcp_pic](./stuff/image_tcp.png)  
 
 In my realisation:  
 Client sends 
@@ -55,4 +55,3 @@ Then a client sends a file's source.
 
 Then server is receiving it. After full downloading server compares amount of received bytes and a file size.  
 If sizes are the same, then server sends a message about it to client and a client prints it.  
-

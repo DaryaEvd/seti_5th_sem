@@ -11,7 +11,7 @@
 
 #include "stuff.h"
 
-#define SIZE 4096 * 4
+#define SIZE 1 * 8 * 1024
 #define MSG_LENGTH 100
 #define CLIENT_LENGTH 4096
 
@@ -32,6 +32,9 @@ int main(int argc, char **argv) {
 
   char *fullPathToFileToSend = argv[1];
   if (!isExistingFile(fullPathToFileToSend)) {
+    printf("Such file by this path '%s' doesn't exists. Try to enter "
+           "another file!\n",
+           fullPathToFileToSend);
     return -1;
   }
 
@@ -41,14 +44,17 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  long sizeFile = countSizeFile(file);
+  unsigned long sizeFile = countSizeFile(file);
+  double mBytesFile = (double)sizeFile / 1024 / 1024;
+  int precision = 2;
+  printf("size file: '%.*f mBytes \n'", precision, mBytesFile);
+
   char *extractedFileName = extractLastToken(fullPathToFileToSend);
   if (!isValidFileNameLength(extractedFileName)) {
+    printf("Your filename is too long in UTF-8. Rename it or give "
+           "another one\n");
     return -1;
   }
-
-  //  TODO
-  //  format utf-8 ???
 
   printf("file name '%s'\n", extractedFileName);
 

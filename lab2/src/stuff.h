@@ -1,12 +1,13 @@
 #ifndef STUFF
-#define STUFF 
+#define STUFF
 
 #include <stdio.h>
 
 int isExistingFile(const char *path);
-int isValidFileNameLength(const char *fileName) ;
+int isValidFileNameLength(const char *fileName);
+int isValidEncoding(const char *filename);
 char *extractLastToken(const char *inputPathToFile);
-long countSizeFile(FILE *file);
+unsigned long countSizeFile(FILE *file);
 int createDir(const char *path);
 
 #endif // STUFF

@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SIZE 4096 * 4
+#define SIZE 1 * 8 * 1024
 #define LENGTH_INFO 100
 #define PATH_LENGTH 4096
 #define GET_KBYTES 1024
@@ -44,25 +44,38 @@ void *connectionFunc(void *arg) {
          fileNameFromClient);
 
   pthread_mutex_lock(&mutexSize);
-  long fileSizeFromClient = 0;
+  unsigned long fileSizeFromClient = 0;
 
-  int clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
-                            sizeof(fileSizeFromClient), 0);
+  long clientRecvSize = recv(conn->socketFD, &fileSizeFromClient,
+                             sizeof(fileSizeFromClient), 0);
   if (clientRecvSize < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
 
-  printf(
-      "server: Msg from client (filesize): '%ld' bytes\n", // TODO :
-                                                           // in
-                                                           // mBytes
-      fileSizeFromClient);
+  double mBytesFile = (double)fileSizeFromClient / 1024 / 1024;
+  if (mBytesFile <= 0) {
+    printf("server: Nothing to send, sizeFile is %lf", mBytesFile);
+    pthread_exit(NULL);
+  }
+  int precision = 2;
+  printf("server: Msg from client (filesize): '%.*f' mBytes \n",
+         precision, (double)mBytesFile);
   pthread_mutex_unlock(&mutexSize);
+
+  // TODO: чо делать с файлом если с таким названием уже есть?
 
   FILE *fileToRecv = NULL;
   char outputFilePath[PATH_LENGTH] = "../build/uploads/";
   strcat(outputFilePath, fileNameFromClient);
+
+  if (isExistingFile(outputFilePath) == 1) {
+    printf("file '%s' will be deleted and rewrited again\n",
+           outputFilePath);
+    remove(outputFilePath);
+    printf("file '%s' has deleted\n", outputFilePath);
+  }
+
   fileToRecv = fopen(outputFilePath, "wb+");
 
   char buffer[SIZE];
@@ -81,15 +94,15 @@ void *connectionFunc(void *arg) {
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
 
     receivedBytes += readBytes;
-    speed =
-        (double)receivedBytes / GET_KBYTES / (time(NULL) - startTime);
+    speed = (double)receivedBytes / 1024 / 1024 /
+            (time(NULL) - startTime);
     printf("[%s] ,", fileNameFromClient);
-    printf("Instantaneous speed: %lf kBytes/sec\n", speed);
+    printf("Instantaneous speed: %lf mBytes/sec\n", speed);
 
     pthread_mutex_lock(&mutexAverageSpeed);
     double averageSpeed =
-        (double)receivedBytes / GET_KBYTES / (timeElapsed + 3.0);
-    printf("Average speed per session: %lf kBytes/sec\n",
+        (double)receivedBytes / 1024 / 1024 / (timeElapsed + 3.0);
+    printf("Average speed per session: %lf mBytes/sec\n",
            averageSpeed);
     pthread_mutex_unlock(&mutexAverageSpeed);
 
@@ -120,6 +133,8 @@ void *connectionFunc(void *arg) {
   return NULL;
 }
 
+// TODO: ЧЕК НА УЖЕ ОТПРАВЛЯЕМЫЙ ФАЙЛ
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     printf("Error! Incorrect input from server!\n");
@@ -132,7 +147,7 @@ int main(int argc, char **argv) {
   char *pathToDirToUploadFiles = "../build/uploads";
 
   int statusCreatingDir = createDir(pathToDirToUploadFiles);
-  if (statusCreatingDir == -1) {
+  if (statusCreatingDir != 0) {
     return -1;
   }
 
@@ -162,7 +177,8 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int maxAmountConnection = 4; //&!&!&!&&!
+  int maxAmountConnection = 100000;
+
   if (listen(serverSocketFileDescr, maxAmountConnection) < 0) {
     perror("listen() error");
     return -1;
@@ -175,10 +191,9 @@ int main(int argc, char **argv) {
 
   connection_t *connection;
 
-  pthread_t threadID[maxAmountConnection];
+  pthread_t threadID;
 
-  // while(1) //TODO
-  for (size_t i = 0; i < maxAmountConnection; i++) {
+  while (1) {
     connection = (connection_t *)malloc(sizeof(connection_t));
     connection->address.sa_family = AF_INET;
     connection->socketFD =
@@ -189,15 +204,12 @@ int main(int argc, char **argv) {
       perror("server: accept() error");
       return -1;
     } else {
-      pthread_create(&threadID[i], 0, connectionFunc,
+      pthread_create(&threadID, 0, connectionFunc,
                      (void *)connection);
+
+      pthread_join(threadID, NULL);
     }
   }
-
-  for (size_t j = 0; j < maxAmountConnection; j++) {
-    pthread_join(threadID[j], NULL);
-  }
-
   free(connection);
   close(serverSocketFileDescr);
   return 0;
