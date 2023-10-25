@@ -68,17 +68,6 @@ void *connectionFunc(void *arg) {
   printf("server: Msg from client (filesize): '%lf' kBytes \n",
          (double)fileSizeFromClient / KILOBYTE);
 
-  // double mBytesFile = 0;
-  // if (fileSizeFromClient > MEGABYTE) {
-  //   mBytesFile = (double)fileSizeFromClient / KILOBYTE / KILOBYTE;
-  //   int precision = 2;
-  //   printf("server: Msg from client (filesize): '%.*f' mBytes \n",
-  //          precision, (double)mBytesFile);
-  // } else {
-  //   printf("server: Msg from client (filesize): '%lf' kBytes \n",
-  //          (double)mBytesFile / KILOBYTE);
-  // }
-
   FILE *fileToRecv = NULL;
   char outputFilePath[PATH_LENGTH] = "../build/uploads/";
   if (!strcat(outputFilePath, fileNameFromClient)) {
@@ -89,14 +78,8 @@ void *connectionFunc(void *arg) {
   if (isExistingFile(outputFilePath) == 1) {
     printf("file '%s' will be deleted and rewrited again\n",
            outputFilePath);
-    // int statusRemove = remove(outputFilePath);
-    // if (statusRemove < 0) {
-    //   perror("server: remove() error");
-    //   pthread_exit(NULL);
-    // }
-
-    int statusUnlink = remove(outputFilePath);
-    if(statusUnlink < 0){
+    int statusUnlink = unlink(outputFilePath);
+    if (statusUnlink < 0) {
       perror("server: unlink() error");
       pthread_exit(NULL);
     }
