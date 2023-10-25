@@ -26,7 +26,7 @@
 #define MEGABYTE 1024 * 1024
 #define GIGABYTE 1024 * 1024 * 1024
 
-#define BUFFER_SIZE 8 * KILOBYTE
+#define BUFFER_SIZE 100 * KILOBYTE
 
 pthread_mutex_t mutexAverageSpeed;
 pthread_mutex_t mutexSize;
@@ -54,36 +54,52 @@ void *connectionFunc(void *arg) {
   printf("server: Msg from client (filename): '%s'\n",
          fileNameFromClient);
 
-  pthread_mutex_lock(&mutexSize);
   long long fileSizeFromClient = 0;
 
+  // pthread_mutex_lock(&mutexSize);
   ssize_t clientRecvSize =
-      recv(conn->socketFD, &fileSizeFromClient, sizeof(2), 0);
+      recv(conn->socketFD, &fileSizeFromClient, 8, 0);
   if (clientRecvSize < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
-  pthread_mutex_unlock(&mutexSize);
+  // pthread_mutex_unlock(&mutexSize);
 
-  double mBytesFile = 0;
-  if (fileSizeFromClient > MEGABYTE) {
-    mBytesFile = (double)fileSizeFromClient / KILOBYTE / KILOBYTE;
-    int precision = 2;
-    printf("server: Msg from client (filesize): '%.*f' mBytes \n",
-           precision, (double)mBytesFile);
-  } else {
-    printf("server: Msg from client (filesize): '%lf' kBytes \n",
-           (double)mBytesFile / KILOBYTE);
-  }
+  printf("server: Msg from client (filesize): '%lf' kBytes \n",
+         (double)fileSizeFromClient / KILOBYTE);
+
+  // double mBytesFile = 0;
+  // if (fileSizeFromClient > MEGABYTE) {
+  //   mBytesFile = (double)fileSizeFromClient / KILOBYTE / KILOBYTE;
+  //   int precision = 2;
+  //   printf("server: Msg from client (filesize): '%.*f' mBytes \n",
+  //          precision, (double)mBytesFile);
+  // } else {
+  //   printf("server: Msg from client (filesize): '%lf' kBytes \n",
+  //          (double)mBytesFile / KILOBYTE);
+  // }
 
   FILE *fileToRecv = NULL;
   char outputFilePath[PATH_LENGTH] = "../build/uploads/";
-  strcat(outputFilePath, fileNameFromClient);
+  if (!strcat(outputFilePath, fileNameFromClient)) {
+    printf("server: no mem for strcat\n");
+    pthread_exit(NULL);
+  }
 
   if (isExistingFile(outputFilePath) == 1) {
     printf("file '%s' will be deleted and rewrited again\n",
            outputFilePath);
-    remove(outputFilePath);
+    // int statusRemove = remove(outputFilePath);
+    // if (statusRemove < 0) {
+    //   perror("server: remove() error");
+    //   pthread_exit(NULL);
+    // }
+
+    int statusUnlink = remove(outputFilePath);
+    if(statusUnlink < 0){
+      perror("server: unlink() error");
+      pthread_exit(NULL);
+    }
     printf("file '%s' has deleted and started writing ... \n",
            outputFilePath);
   }
@@ -97,12 +113,10 @@ void *connectionFunc(void *arg) {
   double timeElapsed = 0.0;
   time_t startTime = time(NULL);
 
-  // while (receivedBytes < fileSizeFromClient) {
-  while (receivedBytes < mBytesFile) {
+  while (receivedBytes < fileSizeFromClient) {
     int readBytes = recv(conn->socketFD, buffer, BUFFER_SIZE, 0);
     if (readBytes < 0) {
       perror("error in recv: ");
-      // return NULL;
       pthread_exit(NULL);
     }
     fwrite(buffer, sizeof(char), readBytes, fileToRecv);
@@ -143,6 +157,8 @@ void *connectionFunc(void *arg) {
     pthread_exit(NULL);
   }
   printf("server: result is: '%s' \n", response);
+
+  // fileSizeFromClient = 0;
 
   fclose(fileToRecv);
   close(conn->socketFD);
@@ -206,27 +222,28 @@ int main(int argc, char **argv) {
 
   connection_t *connection;
 
-  pthread_t threadID;
+  connection = (connection_t *)malloc(sizeof(connection_t));
+  connection->address.sa_family = AF_INET;
+  connection->lengthAddr = sizeof(struct sockaddr_in);
 
-  while (1) {
-    connection = (connection_t *)malloc(sizeof(connection_t));
-    connection->address.sa_family = AF_INET;
-    connection->socketFD =
-        accept(serverSocketFileDescr, &connection->address,
-               &connection->lengthAddr);
-    if (connection->socketFD < 0) {
-      free(connection);
-      perror("server: accept() error");
-      return -1;
-    } else {
-      pthread_create(&threadID, 0, connectionFunc,
-                     (void *)connection);
+  while ((connection->socketFD =
+              accept(serverSocketFileDescr, &connection->address,
+                     &connection->lengthAddr))) {
 
-      pthread_detach(threadID);
-    }
+    pthread_t threadID;
+
+    int *newSocket = malloc(sizeof *newSocket);
+    *newSocket = connection->socketFD;
+
+    pthread_create(&threadID, 0, connectionFunc, (void *)newSocket);
+    pthread_detach(threadID);
   }
 
-  // free(connection);
+  free(connection);
+
   close(serverSocketFileDescr);
+
+  pthread_exit(NULL);
+
   return 0;
 }

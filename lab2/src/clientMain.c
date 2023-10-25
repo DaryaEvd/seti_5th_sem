@@ -18,7 +18,7 @@
 #define MEGABYTE 1024 * 1024
 #define GIGABYTE 1024 * 1024 * 1024
 
-#define BUFFER_SIZE 8 * KILOBYTE
+#define BUFFER_SIZE 100 * KILOBYTE
 
 typedef struct ClientInfo {
   int socketFD;
@@ -94,7 +94,6 @@ int main(int argc, char **argv) {
 
     free(client);
     fclose(file);
-    free(extractedFileName);
 
     return -1;
   }
@@ -107,7 +106,6 @@ int main(int argc, char **argv) {
     close(client->socketFD);
     free(client);
     fclose(file);
-    free(extractedFileName);
 
     return -1;
   }
@@ -123,7 +121,6 @@ int main(int argc, char **argv) {
     close(client->socketFD);
     free(client);
     fclose(file);
-    free(extractedFileName);
 
     return -1;
   }
@@ -137,19 +134,16 @@ int main(int argc, char **argv) {
     close(client->socketFD);
     free(client);
     fclose(file);
-    free(extractedFileName);
 
     return -1;
   }
 
-  if (send(client->socketFD, &sizeFileBytes, sizeof(2), 0) <
-      0) {
+  if (send(client->socketFD, &sizeFileBytes, 8, 0) < 0) {
     perror("client: send() size error ");
 
     close(client->socketFD);
     free(client);
     fclose(file);
-    free(extractedFileName);
 
     return -1;
   }
@@ -163,7 +157,6 @@ int main(int argc, char **argv) {
       close(client->socketFD);
       free(client);
       fclose(file);
-      free(extractedFileName);
 
       return -1;
     }
