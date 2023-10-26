@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
   memset(&addrServer, 0, sizeof(addrServer));
 
   addrServer.sin_family = AF_INET;
-  addrServer.sin_addr.s_addr = htonl(0); // ???
+  addrServer.sin_addr.s_addr = htonl(0);
   addrServer.sin_port = htons(portNum);
 
   if (bind(socketServer, (struct sockaddr *)&addrServer,
