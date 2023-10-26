@@ -10,7 +10,7 @@ add_executable(server.o
 
 add_executable(client.o
         src/clientMain.c 
-        src/stuff.c 
+        src/stuff.c
 )
 
 SET(WARN_FLAGS "-Wall -Wpedantic -Wextra")

@@ -1,6 +1,8 @@
+#include "stuff.h"
+
 #include <arpa/inet.h>
 #include <errno.h>
-#include <error.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,22 +10,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include "stuff.h"
-
-#define MSG_LENGTH 100
-
-#define BYTE 1
-#define KILOBYTE 1024
-#define MEGABYTE 1024 * 1024
-#define GIGABYTE 1024 * 1024 * 1024
-
-#define BUFFER_SIZE 100 * KILOBYTE
-
-typedef struct ClientInfo {
-  int socketFD;
-  struct sockaddr_in address;
-} clientInfo;
 
 int main(int argc, char **argv) {
   if (argc != 4) {
@@ -49,140 +35,121 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  long long sizeFileBytes = countSizeFile(file);
-  printf("size file: '%lld' Bytes\n", sizeFileBytes);
+  __off64_t sizeFileInBytes = countSizeFile(fullPathToFileToSend);
 
-  double mBytesFile = 0;
-  if (sizeFileBytes > MEGABYTE) {
-    mBytesFile = (double)sizeFileBytes / KILOBYTE / KILOBYTE;
-    int precision = 2;
-    printf("size file: '%.*f mBytes \n'", precision, mBytesFile);
-  } else {
-    printf("size file: '%lf kBytes\n",
-           (double)sizeFileBytes / KILOBYTE);
-  }
+  printf("sizeFile '%ld' bytes\n", sizeFileInBytes);
+  printf("sizeFile '%f' kBytes\n", (double)sizeFileInBytes / 1024);
+  printf("sizeFile '%lf' mBytes\n",
+         (double)sizeFileInBytes / 1024 / 1024);
 
-  if (!isValidSizeFile(sizeFileBytes)) {
+  if (!isValidSizeFile(sizeFileInBytes)) {
     printf("client: Size file is too long\n");
     return -1;
   }
 
-  char *extractedFileName = extractLastToken(fullPathToFileToSend);
-  if (!isValidFileNameLength(extractedFileName)) {
+  char *pureFileName = extractLastToken(fullPathToFileToSend);
+  if (!isValidFileNameLength(pureFileName)) {
     printf("Your filename is too long in UTF-8. Rename it or give "
            "another one\n");
     fclose(file);
     return -1;
   }
 
-  printf("file name '%s'\n", extractedFileName);
-
   char *addressIP = argv[2];
   int portNum = atoi(argv[3]);
 
-  clientInfo *client;
-  client = (clientInfo *)malloc(sizeof(clientInfo));
-  if (!client) {
-    perror("client: malloc() error");
+  int socketDescr = socket(PF_INET, SOCK_STREAM, 0);
+  if (socketDescr < 0) {
+    printf("socket failed: %d", errno);
     fclose(file);
-    return -1;
-  }
-
-  client->socketFD = socket(AF_INET, SOCK_STREAM, 0);
-  if (client->socketFD == -1) {
-    perror("server: socket() error");
-
-    free(client);
-    fclose(file);
-
     return -1;
   }
 
   int enable = 1;
-  if (setsockopt(client->socketFD, SOL_SOCKET, SO_REUSEADDR, &enable,
+  if (setsockopt(socketDescr, SOL_SOCKET, SO_REUSEADDR, &enable,
                  sizeof(int)) < 0) {
-    perror("client: setsockopt(SO_REUSEADDR) error");
-
-    close(client->socketFD);
-    free(client);
+    printf("setsockopt(SO_REUSEADDR) failed: %d", errno);
     fclose(file);
-
     return -1;
   }
 
-  client->address.sin_addr.s_addr = inet_addr(addressIP);
-  client->address.sin_family = AF_INET;
-  client->address.sin_port = htons(portNum);
+  struct sockaddr_in dest;
+  dest.sin_family = AF_INET;
+  dest.sin_port = htons(portNum);
+  dest.sin_addr.s_addr = inet_addr(addressIP);
 
-  if (connect(client->socketFD, (struct sockaddr *)&client->address,
-              sizeof(client->address)) != 0) {
-    perror("client: connect() error");
-
-    close(client->socketFD);
-    free(client);
+  if (connect(socketDescr, (struct sockaddr *)&dest, sizeof(dest)) <
+      0) {
     fclose(file);
-
+    close(socketDescr);
     return -1;
   }
 
   printf("client connected\n");
 
-  if (send(client->socketFD, extractedFileName,
-           strlen(extractedFileName) + 1, 0) < 0) {
+  char replyFromServer[500];
+  memset(replyFromServer, '\0', sizeof(replyFromServer));
+
+  if (send(socketDescr, pureFileName, strlen(pureFileName) + 1, 0) <
+      0) {
     perror("client: send() fileName error");
-
-    close(client->socketFD);
-    free(client);
     fclose(file);
-
+    close(socketDescr);
     return -1;
   }
 
-  if (send(client->socketFD, &sizeFileBytes, 8, 0) < 0) {
+  if (recv(socketDescr, replyFromServer, sizeof(replyFromServer), 0) <
+      0) {
+    perror("recv() error");
+    fclose(file);
+    close(socketDescr);
+    return -1;
+  }
+  printf("%s\n", replyFromServer);
+  memset(replyFromServer, '\0', sizeof(replyFromServer));
+
+  if (send(socketDescr, &sizeFileInBytes, sizeof(sizeFileInBytes),
+           0) < 0) {
     perror("client: send() size error ");
-
-    close(client->socketFD);
-    free(client);
     fclose(file);
-
+    close(socketDescr);
     return -1;
   }
+
+  if (recv(socketDescr, replyFromServer, sizeof(replyFromServer), 0) <
+      0) {
+    perror("recv() error");
+    fclose(file);
+    close(socketDescr);
+    return -1;
+  }
+
+  printf("%s\n", replyFromServer);
+  memset(replyFromServer, '\0', sizeof(replyFromServer));
 
   char buffer[BUFFER_SIZE];
   size_t readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
   while (readBytes > 0) {
-    if (send(client->socketFD, buffer, readBytes, 0) < 0) {
+    if (send(socketDescr, buffer, readBytes, 0) < 0) {
       perror("client: error in send() data from file: ");
-
-      close(client->socketFD);
-      free(client);
       fclose(file);
-
+      close(socketDescr);
       return -1;
     }
     readBytes = fread(buffer, sizeof(char), BUFFER_SIZE, file);
   }
 
-  char msgFromServer[MSG_LENGTH];
-  memset(msgFromServer, '\0', sizeof(msgFromServer));
-  ssize_t cliRecv =
-      recv(client->socketFD, msgFromServer, sizeof(msgFromServer), 0);
-  if (cliRecv < 0) {
-    close(client->socketFD);
-    free(client);
-    fclose(file);
-    free(extractedFileName);
-
-    perror("client: recv() error");
+  char resOfSending[500];
+  memset(resOfSending, '\0', sizeof(resOfSending));
+  if (recv(socketDescr, resOfSending, sizeof(resOfSending), 0) < 0) {
+    perror("recv() error\n");
     return 0;
   }
+  printf("client: res of transfer file: %s\n",
+         resOfSending);
+  memset(resOfSending, '\0', sizeof(resOfSending));
 
-  printf("client: server's msg: '%s'\n", msgFromServer);
-
-  close(client->socketFD);
-  free(client);
   fclose(file);
-  free(extractedFileName);
-
+  close(socketDescr);
   return 0;
 }

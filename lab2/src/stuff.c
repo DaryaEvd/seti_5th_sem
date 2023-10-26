@@ -54,11 +54,10 @@ char *extractLastToken(const char *inputPathToFile) {
   return lastToken;
 }
 
-long long countSizeFile(FILE *file) {
-  fseek(file, 0L, SEEK_END);
-  long long sizeFile = ftell(file);
-  rewind(file);
-  return sizeFile;
+__off64_t countSizeFile(char *fullPathToFileToSend) {
+  struct stat st;
+  stat(fullPathToFileToSend, &st);
+  return st.st_size;
 }
 
 int isValidSizeFile(long long size) {

@@ -2,7 +2,6 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <error.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -13,64 +12,61 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// #define SIZE 1 * 8 * 1024
-// #define LENGTH_INFO 100
-
-// #define GET_KBYTES 1024
-
-#define MSG_LENGTH 100
-#define PATH_LENGTH 4096
-
-#define BYTE 1
-#define KILOBYTE 1024
-#define MEGABYTE 1024 * 1024
-#define GIGABYTE 1024 * 1024 * 1024
-
-#define BUFFER_SIZE 100 * KILOBYTE
-
-pthread_mutex_t mutexAverageSpeed;
-pthread_mutex_t mutexSize;
-pthread_mutex_t downloadFile;
-
-typedef struct {
-  int socketFD;
-  struct sockaddr address;
-  socklen_t lengthAddr;
-} connection_t;
-
 void *connectionFunc(void *arg) {
-  connection_t *conn = (connection_t *)arg;
+  int clientSocketInServer = *(int *)arg;
 
-  char fileNameFromClient[MSG_LENGTH];
-  memset(fileNameFromClient, '\0', sizeof(fileNameFromClient));
-
-  int clientRecvName = recv(conn->socketFD, fileNameFromClient,
-                            sizeof(fileNameFromClient), 0);
-  if (clientRecvName < 0) {
+  /*--- receive file name ----*/
+  char fileName[MSG_LENGTH];
+  memset(fileName, '\0', sizeof(fileName));
+  ssize_t getNameStatus =
+      recv(clientSocketInServer, fileName, sizeof(fileName), 0);
+  if (getNameStatus < 0) {
     perror("server: recv() fileName error");
     pthread_exit(NULL);
   }
+  printf("server: Msg from client (filename): '%s'\n", fileName);
 
-  printf("server: Msg from client (filename): '%s'\n",
-         fileNameFromClient);
+  char replyToClient[MSG_LENGTH];
+  memset(replyToClient, '\0', sizeof(replyToClient));
+  strcpy(replyToClient, "from serv to cli: got file name");
+  if (send(clientSocketInServer, replyToClient, sizeof(replyToClient),
+           0) < 0) {
+    printf("send() error: %d", errno);
+    pthread_exit(NULL);
+  }
+  memset(replyToClient, '\0', sizeof(replyToClient));
 
-  long long fileSizeFromClient = 0;
+  /*--- receive file size ----*/
+  __off64_t sizeFromClientInBytes = 0;
 
-  // pthread_mutex_lock(&mutexSize);
-  ssize_t clientRecvSize =
-      recv(conn->socketFD, &fileSizeFromClient, 8, 0);
-  if (clientRecvSize < 0) {
+  ssize_t getSizeStatus =
+      recv(clientSocketInServer, &sizeFromClientInBytes,
+           sizeof(sizeFromClientInBytes), 0);
+  if (getSizeStatus < 0) {
+    perror("recv() error");
+    pthread_exit(NULL);
+  }
+
+  if (sizeFromClientInBytes < MEGABYTE) {
+    printf("server: Msg from client (filesize): '%f' KBytes\n",
+           (double)sizeFromClientInBytes / 1024);
+  } else {
+    printf("server: Msg from client (filesize): '%lf' MBytes\n",
+           (double)sizeFromClientInBytes / 1024 / 1024);
+  }
+
+  strcpy(replyToClient, "from serv to cli: got size file");
+  if (send(clientSocketInServer, replyToClient, sizeof(replyToClient),
+           0) < 0) {
     perror("server: recv() fileSize error");
     pthread_exit(NULL);
   }
-  // pthread_mutex_unlock(&mutexSize);
+  memset(replyToClient, '\0', sizeof(replyToClient));
 
-  printf("server: Msg from client (filesize): '%lf' kBytes \n",
-         (double)fileSizeFromClient / KILOBYTE);
-
+  /*--- work with files' data ----*/
   FILE *fileToRecv = NULL;
-  char outputFilePath[PATH_LENGTH] = "../build/uploads/";
-  if (!strcat(outputFilePath, fileNameFromClient)) {
+  char outputFilePath[500] = "../build/uploads/";
+  if (!strcat(outputFilePath, fileName)) {
     printf("server: no mem for strcat\n");
     pthread_exit(NULL);
   }
@@ -88,65 +84,74 @@ void *connectionFunc(void *arg) {
   }
 
   fileToRecv = fopen(outputFilePath, "wb+");
-
   char buffer[BUFFER_SIZE];
   long receivedBytes = 0;
+
+  double timeElapsed = 0.0;
+  double currtime = 0;
   double speed = 0.0;
   double averageSpeed = 0.0;
-  double timeElapsed = 0.0;
+
+  int wasPrinted = 0;
+
   time_t startTime = time(NULL);
 
-  while (receivedBytes < fileSizeFromClient) {
-    int readBytes = recv(conn->socketFD, buffer, BUFFER_SIZE, 0);
+  while (receivedBytes < sizeFromClientInBytes) {
+    int readBytes =
+        recv(clientSocketInServer, buffer, BUFFER_SIZE, 0);
     if (readBytes < 0) {
       perror("error in recv: ");
       pthread_exit(NULL);
     }
-    fwrite(buffer, sizeof(char), readBytes, fileToRecv);
+    ssize_t statFwrite =
+        fwrite(buffer, sizeof(char), readBytes, fileToRecv);
+    if (statFwrite < 0) {
+      perror("error in fwrite(): ");
+      pthread_exit(NULL);
+    }
 
-    pthread_mutex_lock(&downloadFile);
     receivedBytes += readBytes;
-    pthread_mutex_unlock(&downloadFile);
 
-    speed =
-        (double)receivedBytes / KILOBYTE / (time(NULL) - startTime);
-    printf("[%s] ,", fileNameFromClient);
-    printf("Instantaneous speed: %lf kBytes/sec\n", speed);
+    if ((currtime = time(NULL) - startTime) >= 3 || !wasPrinted) {
+      printf("[%s], ", fileName);
 
-    pthread_mutex_lock(&mutexAverageSpeed);
-    double averageSpeed =
-        (double)receivedBytes / KILOBYTE / (timeElapsed); // + 3.0);
-    printf("Average speed per session: %lf kBytes/sec\n",
-           averageSpeed);
-    pthread_mutex_unlock(&mutexAverageSpeed);
+      if (sizeFromClientInBytes < MEGABYTE) {
+        speed = (double)receivedBytes; /// currtime;
+        printf("Instantaneous speed: %lf Bytes/sec\n", speed);
+      } else {
+        speed = (double)receivedBytes / 1024 / 1024 / (currtime);
+        printf("Instantaneous speed: %lf MBytes/sec\n", speed);
+      }
 
-    timeElapsed += 3.0;
+      averageSpeed = speed / 3;
+      printf("Average speed per session: %lf MBytes/sec\n",
+             averageSpeed);
+      startTime = time(NULL);
 
-    sleep(3);
+      wasPrinted = 1;
+    }
   }
 
-  char response[MSG_LENGTH];
-  memset(response, '\0', sizeof(response));
+  char resultOfRecvFile[500];
+  memset(resultOfRecvFile, '\0', sizeof(resultOfRecvFile));
 
-  if (receivedBytes == fileSizeFromClient) {
-    strcpy(response, "sizes are the same");
+  if (receivedBytes == sizeFromClientInBytes) {
+    strcpy(resultOfRecvFile, "sizes are the same");
   } else {
-    strcpy(response, "sizes are different");
+    strcpy(resultOfRecvFile, "sizes are different");
   }
-  ssize_t servSend =
-      send(conn->socketFD, response, sizeof(response), 0);
-  if (servSend < 0) {
+
+  ssize_t servSendStatus =
+      send(clientSocketInServer, resultOfRecvFile,
+           sizeof(resultOfRecvFile), 0);
+  if (servSendStatus < 0) {
     perror("server: send() in the end error");
     pthread_exit(NULL);
   }
-  printf("server: result is: '%s' \n", response);
 
-  // fileSizeFromClient = 0;
-
+  close(clientSocketInServer);
   fclose(fileToRecv);
-  close(conn->socketFD);
-  free(conn);
-  return NULL;
+  pthread_exit(NULL);
 }
 
 int main(int argc, char **argv) {
@@ -165,68 +170,65 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  int serverSocketFileDescr = socket(AF_INET, SOCK_STREAM, 0);
-  if (serverSocketFileDescr < 0) {
+  int socketServer = socket(AF_INET, SOCK_STREAM, 0);
+  if (socketServer < 0) {
     perror("server: socket() error");
     return -1;
   }
 
   int enable = 1;
-  if (setsockopt(serverSocketFileDescr, SOL_SOCKET, SO_REUSEADDR,
-                 &enable, sizeof(int)) < 0) {
+  if (setsockopt(socketServer, SOL_SOCKET, SO_REUSEADDR, &enable,
+                 sizeof(int)) < 0) {
     perror("server: setsockopt(SO_REUSEADDR) error");
-    return -1;
+    close(socketServer);
+    return 1;
   }
 
-  struct sockaddr_in serverAddr;
-  memset(&serverAddr, 0, sizeof(serverAddr));
+  struct sockaddr_in addrServer;
+  memset(&addrServer, 0, sizeof(addrServer));
 
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_addr.s_addr = INADDR_ANY;
-  serverAddr.sin_port = htons(portNum);
+  addrServer.sin_family = AF_INET;
+  addrServer.sin_addr.s_addr = htonl(0); // ???
+  addrServer.sin_port = htons(portNum);
 
-  if (bind(serverSocketFileDescr, (struct sockaddr *)&serverAddr,
-           sizeof(serverAddr)) < 0) {
+  if (bind(socketServer, (struct sockaddr *)&addrServer,
+           sizeof(addrServer)) < 0) {
     perror("server: bind() error");
+    close(socketServer);
     return -1;
   }
 
   int maxAmountConnection = 100000;
 
-  if (listen(serverSocketFileDescr, maxAmountConnection) < 0) {
+  if (listen(socketServer, maxAmountConnection) < 0) {
     perror("listen() error");
+    close(socketServer);
     return -1;
   }
 
   printf("Server: waiting for clients ...\n");
 
-  struct sockaddr_in clientAddr;
-  memset(&clientAddr, 0, sizeof(clientAddr));
+  while (1) {
+    struct sockaddr_in addrClient;
+    memset(&addrClient, 0, sizeof(addrClient));
 
-  connection_t *connection;
+    addrClient.sin_family = AF_INET;
+    socklen_t client_size = sizeof(addrClient);
 
-  connection = (connection_t *)malloc(sizeof(connection_t));
-  connection->address.sa_family = AF_INET;
-  connection->lengthAddr = sizeof(struct sockaddr_in);
-
-  while ((connection->socketFD =
-              accept(serverSocketFileDescr, &connection->address,
-                     &connection->lengthAddr))) {
+    int clientSocketInServer = accept(
+        socketServer, (struct sockaddr *)&addrClient, &client_size);
+    if (clientSocketInServer < 0) {
+      printf("accept error: %d\n", errno);
+      close(socketServer);
+      return -1;
+    }
 
     pthread_t threadID;
-
-    int *newSocket = malloc(sizeof *newSocket);
-    *newSocket = connection->socketFD;
-
-    pthread_create(&threadID, 0, connectionFunc, (void *)newSocket);
-    pthread_detach(threadID);
+    pthread_create(&threadID, NULL, connectionFunc,
+                   &clientSocketInServer);
   }
 
-  free(connection);
-
-  close(serverSocketFileDescr);
-
-  pthread_exit(NULL);
-
+  close(socketServer);
+  close(socketServer);
   return 0;
 }
