@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#define BUFFER_SIZE 30 
+#define BUFFER_SIZE 1460
 
 #define MSG_LENGTH 100
 #define PATH_LENGTH 4096
@@ -13,6 +13,8 @@
 #define KILOBYTE 1024
 #define MEGABYTE 1024 * 1024
 #define GIGABYTE 1024 * 1024 * 1024
+
+#define MAX_TIMEOUT 3
 
 int isExistingFile(const char *path);
 int isValidFileNameLength(const char *fileName);

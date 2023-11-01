@@ -112,18 +112,18 @@ void *connectionFunc(void *arg) {
 
     receivedBytes += readBytes;
 
-    if ((currtime = time(NULL) - startTime) >= 3 || !wasPrinted) {
+    if ((currtime = time(NULL) - startTime) >= MAX_TIMEOUT || !wasPrinted) {
       printf("[%s], ", fileName);
 
       if (sizeFromClientInBytes < MEGABYTE) {
-        speed = (double)receivedBytes; /// currtime;
+        speed = (double)receivedBytes / currtime;
         printf("Instantaneous speed: %lf Bytes/sec\n", speed);
       } else {
         speed = (double)receivedBytes / 1024 / 1024 / (currtime);
         printf("Instantaneous speed: %lf MBytes/sec\n", speed);
       }
 
-      averageSpeed = speed / 3;
+      averageSpeed = speed / MAX_TIMEOUT;
       printf("Average speed per session: %lf MBytes/sec\n",
              averageSpeed);
       startTime = time(NULL);
@@ -188,8 +188,9 @@ int main(int argc, char **argv) {
   memset(&addrServer, 0, sizeof(addrServer));
 
   addrServer.sin_family = AF_INET;
-  addrServer.sin_addr.s_addr = htonl(INADDR_ANY); // don't need to bind a
-																								 //	socket to a specific IP
+  addrServer.sin_addr.s_addr =
+      htonl(INADDR_ANY); // don't need to bind a
+                         //	socket to a specific IP
   addrServer.sin_port = htons(portNum);
 
   if (bind(socketServer, (struct sockaddr *)&addrServer,

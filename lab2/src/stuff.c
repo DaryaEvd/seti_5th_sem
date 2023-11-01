@@ -22,7 +22,7 @@ int isValidFileNameLength(const char *fileName) {
 
   wchar_t wideFileName[4096];
 
-  // Convert a multibyte string to a wide char string
+  // convert a multibyte string to a wide char string
   mbstowcs(wideFileName, fileName, 4096);
 
   // return the number of wide characters
