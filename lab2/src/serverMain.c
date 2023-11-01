@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -85,14 +86,17 @@ void *connectionFunc(void *arg) {
 
   fileToRecv = fopen(outputFilePath, "wb+");
   char buffer[BUFFER_SIZE];
-  long receivedBytes = 0;
 
-  double timeElapsed = 0.0;
-  double currtime = 0;
+  int wasPrinted = 0;
+
+  double currTime = 0.0;
   double speed = 0.0;
   double averageSpeed = 0.0;
 
-  int wasPrinted = 0;
+  double totalTime = 0;
+  long totalBytes = 0;
+  long bytesFor3Sec = 0;
+  long receivedBytes = 0;
 
   time_t startTime = time(NULL);
 
@@ -111,21 +115,26 @@ void *connectionFunc(void *arg) {
     }
 
     receivedBytes += readBytes;
+    bytesFor3Sec += readBytes;
 
-    if ((currtime = time(NULL) - startTime) >= MAX_TIMEOUT || !wasPrinted) {
+    currTime = time(NULL) - startTime;
+    if (currTime >= MAX_TIMEOUT || !wasPrinted) {
       printf("[%s], ", fileName);
 
-      if (sizeFromClientInBytes < MEGABYTE) {
-        speed = (double)receivedBytes / currtime;
-        printf("Instantaneous speed: %lf Bytes/sec\n", speed);
-      } else {
-        speed = (double)receivedBytes / 1024 / 1024 / (currtime);
-        printf("Instantaneous speed: %lf MBytes/sec\n", speed);
-      }
+      speed = (double)bytesFor3Sec / 1024 / 1024 / MAX_TIMEOUT;
+      printf("Instantaneous speed: %lf MBytes/sec\n", speed);
+      bytesFor3Sec = 0;
 
-      averageSpeed = speed / MAX_TIMEOUT;
+      if (totalTime < MAX_TIMEOUT + 1) {
+        averageSpeed = speed;
+      } else {
+        averageSpeed = (double)receivedBytes / 1024 / 1024 /
+                       (currTime + totalTime);
+      }
       printf("Average speed per session: %lf MBytes/sec\n",
              averageSpeed);
+
+      totalTime += currTime;
       startTime = time(NULL);
 
       wasPrinted = 1;

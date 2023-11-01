@@ -145,8 +145,7 @@ int main(int argc, char **argv) {
     perror("recv() error\n");
     return 0;
   }
-  printf("client: res of transfer file: %s\n",
-         resOfSending);
+  printf("client: res of transfer file: %s\n", resOfSending);
   memset(resOfSending, '\0', sizeof(resOfSending));
 
   fclose(file);
