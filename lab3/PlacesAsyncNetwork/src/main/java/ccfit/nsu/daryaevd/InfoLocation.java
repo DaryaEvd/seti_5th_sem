@@ -27,7 +27,9 @@ public class InfoLocation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         InfoLocation that = (InfoLocation) o;
-        return Objects.equals(point, that.point) && Objects.equals(name, that.name) && Objects.equals(country, that.country);
+        return Objects.equals(point, that.point)
+                && Objects.equals(name, that.name)
+                && Objects.equals(country, that.country);
     }
 
     @Override
