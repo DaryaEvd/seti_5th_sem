@@ -32,7 +32,6 @@ public class Client {
     CompletableFuture<ArrayList<InfoLocation>> getLocationsFromAPI(String locationUser) {
         int limit = 10;
         String URL_GEOCODE = GEOCODE_START_REQUEST + locationUser + GEOCODE_ADDITION + GEOCODE_LIMIT_MAX + limit + "&key=" + GEOCODE_API;
-        System.out.println("geocode:" + URL_GEOCODE);
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
