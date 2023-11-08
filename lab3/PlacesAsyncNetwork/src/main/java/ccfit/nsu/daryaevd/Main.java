@@ -84,13 +84,13 @@ public class Main {
         int i = 0;
         for (InfoLocation location : locationsList) {
             System.out.println((++i) + ". " +
-                    location.name + " [" +
+                    location.getName() + " [" +
                     location.point.lat() + ", " +
-                    location.point.lng() + "], " +
-                    location.country + ", " +
-                    location.city + ", " +
-                    location.osmKey + ", " +
-                    location.osmValue
+                    location.point.lng() + "], "
+                    + location.getCountry()
+                    + location.getCity()
+                    + location.getOsmKey()
+                    + location.getOsmValue()
             );
         }
     }

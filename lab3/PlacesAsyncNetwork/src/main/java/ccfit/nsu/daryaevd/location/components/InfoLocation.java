@@ -30,4 +30,40 @@ public class InfoLocation {
         this.osmKey = osmKey;
     }
 
+    public String getName() {
+        if (name == null) {
+            return "";
+        }
+        return name;
+    }
+
+    public String getCountry() {
+        if (country == null) {
+            return "";
+        }
+        return country + ", ";
+    }
+
+    public String getCity() {
+        if (city == null) {
+            return "";
+        }
+        return city + ", ";
+    }
+
+    public String getOsmKey() {
+        if (osmKey == null) {
+            return "";
+        }
+        return osmKey + ", ";
+    }
+
+    public String getOsmValue() {
+        if (osmKey == null) {
+            return "";
+        }
+        return osmValue;
+    }
+
+
 }

@@ -36,16 +36,16 @@ In this case, the API should be used like this:
 
 Например, пользователь вводит в консоль `Kemerovo`, потом должен высветиться вот такой список (к примеру)   
 ```
-1. Kemerovo [55.3550907, 86.0871213], Russia, null, place, city
+1. Kemerovo [55.3550907, 86.0871213], Russia, place, city
 2. Kemerovó-lakótelep [48.1183396, 19.8021625], Hungary, Salgótarján, place, suburb
-3. Kemerovo Agglomeration [55.42353665, 86.63728357496711], Russia, null, boundary, economic
-4. Kemerovo - Promyshlennaya [55.0845013, 85.9916531], Russia, null, highway, secondary
-5. Kemerovo - Promyshlennaya [55.0807137, 85.9852439], Russia, null, highway, secondary
-6. Kemerovo - Promyshlennaya [55.1148602, 86.0113947], Russia, null, highway, secondary
-7. Kemerovo - Promyshlennaya [55.1955602, 86.0015435], Russia, null, highway, secondary
-8. Kemerovo - Promyshlennaya [55.0567005, 85.9476312], Russia, null, highway, secondary
-9. Kemerovo - Promyshlennaya [55.2259483, 86.030737], Russia, null, highway, primary
-10. Kemerovo - Promyshlennaya [55.2215989, 86.0306752], Russia, null, highway, secondary
+3. Kešetovo [46.1539068, 15.0499646], Slovenia, Trbovlje, highway, living_street
+4. Kemerovo - Promyshlennaya [55.1955602, 86.0015435], Russia, highway, secondary
+5. Kemerovo - Promyshlennaya [55.2213858, 86.030791], Russia, highway, secondary
+6. Kemerovo - Promyshlennaya [55.2259483, 86.0308483], Russia, highway, primary
+7. Kemerovo - Promyshlennaya [55.2259483, 86.030737], Russia, highway, primary
+8. Kemerovo - Promyshlennaya [55.2215989, 86.0306752], Russia, highway, secondary
+9. Kemerovo Agglomeration [55.42353665, 86.63728357496711], Russia, boundary, economic
+10. Kemerovo - Promyshlennaya [55.0845013, 85.9916531], Russia, highway, secondary
 ```
 Откуда этот список появляется?   
 Мы делаем Http-запрос: `https://graphhopper.com/api/1/geocode?q=Kemerovo&locale=en&limit=3&key=606d0fc3-813d-43fc-8c19-f9e6666f0677`  
