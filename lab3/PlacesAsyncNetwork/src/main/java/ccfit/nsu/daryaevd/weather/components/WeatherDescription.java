@@ -1,4 +1,4 @@
-package ccfit.nsu.daryaevd;
+package ccfit.nsu.daryaevd.weather.components;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -34,7 +34,7 @@ public class WeatherDescription {
     }
 
     public double getPressure() {
-        return openWeatherMain.getPressure();
+        return openWeatherMain.getPressure() / 1000; // from kBar to millimeters of mercury
     }
 
     public double getHumidity() {

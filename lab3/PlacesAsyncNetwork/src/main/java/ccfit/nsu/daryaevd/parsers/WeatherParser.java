@@ -1,5 +1,6 @@
-package ccfit.nsu.daryaevd;
+package ccfit.nsu.daryaevd.parsers;
 
+import ccfit.nsu.daryaevd.weather.components.WeatherDescription;
 import com.google.gson.Gson;
 
 public class WeatherParser {

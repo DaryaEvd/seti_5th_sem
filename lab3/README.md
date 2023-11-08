@@ -11,6 +11,7 @@ In this case, the API should be used like this:
 4. All results of work must be collected into a common object; poetic conclusion of the results of work during the work process is not allowed;  
 5. Do not remove the lock waiting for intermediate results in a call chain; only blocking while waiting for the final result is allowed (in the case of a console application).  
 6. In other words, the program logic should be formatted as two functions, the method of which returns CompletableFuture (or an analogue in your language) without blocking. The first function is carried out in step 2, the second - in step 2. 4 and 5 from the list below.  
+
 #### Logic of program:  
 1. In the input field, the user enters the name of something (for example, “Tsvetnoy Proezd”) and presses the search button;  
 2. Location options are searched using method [1] and shown to the user in the form of a list;  

@@ -1,4 +1,4 @@
-package ccfit.nsu.daryaevd;
+package ccfit.nsu.daryaevd.weather.components;
 
 import com.google.gson.annotations.SerializedName;
 

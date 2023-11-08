@@ -1,5 +1,7 @@
-package ccfit.nsu.daryaevd;
+package ccfit.nsu.daryaevd.parsers;
 
+import ccfit.nsu.daryaevd.location.components.HitItems;
+import ccfit.nsu.daryaevd.location.components.InfoLocation;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
