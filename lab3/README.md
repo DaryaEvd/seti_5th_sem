@@ -61,69 +61,58 @@ In this case, the API should be used like this:
     "hits": [
         {
             "point": {
-                "lat": 47.5118308,
-                "lng": 42.1394453
+                "lat": 55.3550907,
+                "lng": 86.0871213
             },
             "extent": [
-                42.1380126,
-                47.5118308,
-                42.1394453,
-                47.5125696
+                85.909499,
+                55.2565763,
+                86.2920401,
+                55.5449212
             ],
-            "name": "Цветной проезд",
+            "name": "Kemerovo",
             "country": "Russia",
             "countrycode": "RU",
-            "city": "Volgodonsk",
-            "state": "Rostov Oblast",
-            "postcode": "347360",
-            "osm_id": 209897938,
-            "osm_type": "W",
-            "osm_key": "highway",
-            "osm_value": "residential"
+            "state": "Kuzbass",
+            "osm_id": 1312868,
+            "osm_type": "R",
+            "osm_key": "place",
+            "osm_value": "city"
         },
         {
             "point": {
-                "lat": 44.9713756,
-                "lng": 37.2925047
+                "lat": 48.1183396,
+                "lng": 19.8021625
             },
-            "extent": [
-                37.29218,
-                44.9702746,
-                37.2938558,
-                44.9717482
-            ],
-            "name": "Цветной проезд",
-            "country": "Russia",
-            "countrycode": "RU",
-            "city": "Piatikhatki",
-            "state": "Krasnodar Krai",
-            "postcode": "353418",
-            "osm_id": 319270205,
-            "osm_type": "W",
-            "osm_key": "highway",
-            "osm_value": "residential"
+            "name": "Kemerovó-lakótelep",
+            "country": "Hungary",
+            "countrycode": "HU",
+            "city": "Salgótarján",
+            "state": "Great Plain and North",
+            "postcode": "3108",
+            "osm_id": 1846777603,
+            "osm_type": "N",
+            "osm_key": "place",
+            "osm_value": "suburb"
         },
         {
             "point": {
-                "lat": 44.9694046,
-                "lng": 37.2947592
+                "lat": 55.42353665,
+                "lng": 86.63728357496711
             },
             "extent": [
-                37.2938438,
-                44.9691322,
-                37.294894,
-                44.9702746
+                84.4478947,
+                54.0101874,
+                89.4026437,
+                56.8351312
             ],
-            "name": "Цветной проезд",
+            "name": "Kemerovo Agglomeration",
             "country": "Russia",
             "countrycode": "RU",
-            "city": "Piatikhatki",
-            "state": "Krasnodar Krai",
-            "postcode": "353418",
-            "osm_id": 312609825,
-            "osm_type": "W",
-            "osm_key": "highway",
-            "osm_value": "unclassified"
+            "osm_id": 14392586,
+            "osm_type": "R",
+            "osm_key": "boundary",
+            "osm_value": "economic"
         }
     ],
     "locale": "en"
