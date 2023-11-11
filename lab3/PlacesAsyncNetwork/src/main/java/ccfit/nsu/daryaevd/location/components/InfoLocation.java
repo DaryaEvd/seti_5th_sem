@@ -34,36 +34,35 @@ public class InfoLocation {
         if (name == null) {
             return "";
         }
-        return name;
+        return "Name: " + name;
     }
 
     public String getCountry() {
         if (country == null) {
             return "";
         }
-        return country + ", ";
+        return "Country: " + country;
     }
 
     public String getCity() {
         if (city == null) {
             return "";
         }
-        return city + ", ";
+        return "City: " + city;
     }
 
     public String getOsmKey() {
         if (osmKey == null) {
             return "";
         }
-        return osmKey + ", ";
+        return "More detailed: " + osmKey;
     }
 
     public String getOsmValue() {
         if (osmKey == null) {
             return "";
         }
-        return osmValue;
+        return ", " + osmValue;
     }
-
 
 }

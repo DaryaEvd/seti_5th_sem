@@ -34,7 +34,8 @@ public class WeatherDescription {
     }
 
     public double getPressure() {
-        return openWeatherMain.getPressure() / 1000; // from kBar to millimeters of mercury
+        double hPaInOnemmHg = 1.33322387415;
+        return openWeatherMain.getPressure() / hPaInOnemmHg;
     }
 
     public double getHumidity() {

@@ -32,19 +32,18 @@ public class DescriptionPlace {
             stringBuilder.append("Address is: ").append(address.cityDistrict);
         }
         if (address.road != null) {
-            stringBuilder.append(" ").append(address.road).append(" ");
+            stringBuilder.append(", ").append(address.road);
         }
         if (address.houseNumber != null) {
-            stringBuilder.append(" ").append(address.houseNumber);
+            stringBuilder.append(", ").append(address.houseNumber);
         }
-
 
         stringBuilder.append("\n");
 
         if (wikiExtracts != null) {
             return WordUtils.wrap(stringBuilder.append(wikiExtracts).append("\n").toString(), 120);
         } else if (infoOpenTrip != null) {
-            return WordUtils.wrap(cleanAndPrint(stringBuilder.append(infoOpenTrip).append("\n").toString()), 120);
+            return "\n" + stringBuilder.append(WordUtils.wrap(cleanAndPrint(infoOpenTrip.toString()), 120)) + "\n";
         }
         return stringBuilder.append("Unfortunately, no description found\n\n").toString();
 
