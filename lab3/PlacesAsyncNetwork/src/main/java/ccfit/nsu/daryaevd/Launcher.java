@@ -79,8 +79,8 @@ public class Launcher {
                     location.getName() + " [" +
                     location.point.lat() + ", " +
                     location.point.lng() + "], "
-                    + location.getCountry()
-                    + location.getCity()
+                    + location.getCountry() + " "
+                    + location.getCity() + " "
                     + location.getOsmKey()
                     + location.getOsmValue()
             );
