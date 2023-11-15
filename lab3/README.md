@@ -31,7 +31,7 @@ In this case, the API should be used like this:
 ` https://opentripmap.io/docs#/Object%20properties/getPlaceByXid`  
 
 ### What is the point of the lab?
-You need to make an application in which requests for a location are made asynchronously, and then for this location the weather is searched, interesting places within a (some self-set) radius and descriptions of these places. And everything is done asynchronously, because it’s faster.
+You need to make an application in which requests for a location are made asynchronously, and then for this location the weather is searched, interesting places within a radius(we set it by ourselves) and descriptions of these places. And everything is done asynchronously, because it’s faster.  
 The information received on location, weather, places and descriptions is taken from the API, so read [here](https://habr.com/ru/articles/464261/).
 
 For example, the user enters `Kemerovo` into the console, then the following list should be displayed (for example)   
