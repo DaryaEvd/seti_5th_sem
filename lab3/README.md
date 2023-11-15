@@ -30,11 +30,11 @@ In this case, the API should be used like this:
 4. getting a description of a place by its id:  
 ` https://opentripmap.io/docs#/Object%20properties/getPlaceByXid`  
 
-### В чём смысл лабы?   
-Нужно сделать приложение, в котором запросы на локацию делаются асинхронно, а потом для этой локации ищется погода, интересные места в пределах (какого-то установленного самим) радиуса и описания к этим местам. И делается всё асинхронно, потому что так быстрее.  
-Сама получаемая инфа по локации, погоде, местам и описанию берется из API, чо каво - читать [тут](https://habr.com/ru/articles/464261/).  
+### What is the point of the lab?
+You need to make an application in which requests for a location are made asynchronously, and then for this location the weather is searched, interesting places within a (some self-set) radius and descriptions of these places. And everything is done asynchronously, because it’s faster.
+The information received on location, weather, places and descriptions is taken from the API, so read [here](https://habr.com/ru/articles/464261/).
 
-Например, пользователь вводит в консоль `Kemerovo`, потом должен высветиться вот такой список (к примеру)   
+For example, the user enters `Kemerovo` into the console, then the following list should be displayed (for example)   
 ```
 1. Kemerovo [55.3550907, 86.0871213], Russia, place, city
 2. Kemerovó-lakótelep [48.1183396, 19.8021625], Hungary, Salgótarján, place, suburb
@@ -47,15 +47,15 @@ In this case, the API should be used like this:
 9. Kemerovo Agglomeration [55.42353665, 86.63728357496711], Russia, boundary, economic
 10. Kemerovo - Promyshlennaya [55.0845013, 85.9916531], Russia, highway, secondary
 ```
-Откуда этот список появляется?   
-Мы делаем Http-запрос: `https://graphhopper.com/api/1/geocode?q=Kemerovo&locale=en&limit=3&key=606d0fc3-813d-43fc-8c19-f9e6666f0677`  
-*По дефолту показывается 5 объектов, но чтоб не захламлять ридми, поставила лимит=3, прост для примера    
+Where does this list come from?
+We make an Http request: `https://graphhopper.com/api/1/geocode?q=Kemerovo&locale=en&limit=3&key=606d0fc3-813d-43fc-8c19-f9e6666f0677`  
+By default, 5 objects are shown, but in order not to clutter the readme, I set the limit = 3, simple for example  
 
-#### !!! Attention !!! надо зарегаться на каждом сайте апишек и в лк получить свой API_KEY    
+#### !!! Attention !!! register on each site of API and get ypur own API_KEY    
 
-#### РЕКОМЕНДАЦИЯ  
-Для того, чтоб быстро и в норм виде посмотреть запрос, рекомендую вот этот сайтик(или расширение):  `https://app.boomerangapi.com/workspace`   
-На приведеный выше http-запрос вывод будет таким:  
+#### RECOMMENDATION 
+In order to quickly and properly view the request, I recommend this website (or extension): `https://app.boomerangapi.com/workspace`  
+The output from the above http request will be like this:
 ```
 {
     "hits": [
@@ -118,11 +118,11 @@ In this case, the API should be used like this:
     "locale": "en"
 }
 ```
-Этот результат запроса показаыввется в json-формате.   
-#### Как работать с json-ом?  
-Читать [тут](https://habr.com/ru/articles/554274/)  
+The result is in json-format.  
+#### HOW TO WORK WITH JSON?   
+Read [here](https://habr.com/ru/articles/554274/)  
 
-И так по аналогии с каждым из API. Читать документацию по апишке, смотреть, что выводит, и от этого парсить и т.д.  
+And so on by analogy with each of the APIs. Read the documentation for the application, see what it outputs, and parse it from there, etc.  
 
 #### Attention 2.0  
-Если запросы не работают, то, возможно, из-за ограничений(?) на количество запросов. Использовать VPN тогда.  
+If queries don't work, it's probably due to limitations(?) on the number of queries. Use VPN.  
