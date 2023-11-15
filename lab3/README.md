@@ -49,9 +49,9 @@ For example, the user enters `Kemerovo` into the console, then the following lis
 ```
 Where does this list come from?
 We make an Http request: `https://graphhopper.com/api/1/geocode?q=Kemerovo&locale=en&limit=3&key=606d0fc3-813d-43fc-8c19-f9e6666f0677`  
-By default, 5 objects are shown, but in order not to clutter the readme, I set the limit = 3, simple for example  
+By default, 5 objects are shown, but in order not to trash the readme, I set the limit = 3, just for example  
 
-#### !!! Attention !!! register on each site of API and get ypur own API_KEY    
+#### !!! Attention !!! register on each site of API and get your own API_KEY    
 
 #### RECOMMENDATION 
 In order to quickly and properly view the request, I recommend this website (or extension): `https://app.boomerangapi.com/workspace`  
@@ -122,7 +122,7 @@ The result is in json-format.
 #### HOW TO WORK WITH JSON?   
 Read [here](https://habr.com/ru/articles/554274/)  
 
-And so on by analogy with each of the APIs. Read the documentation for the application, see what it outputs, and parse it from there, etc.  
+And so on by analogy with each of the APIs. Read the documentation for the APIs, see what it outputs, and parse it from there, etc.  
 
 #### Attention 2.0  
 If queries don't work, it's probably due to limitations(?) on the number of queries. Use VPN.  
