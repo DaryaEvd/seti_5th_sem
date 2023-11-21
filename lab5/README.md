@@ -24,3 +24,11 @@ For testing, you can configure any Web browser to use your proxy, and visit any 
 2. [SOCKS 5 RFC](https://www.ietf.org/rfc/rfc1928.txt) 
 3. [dlya samih malenkih](http://fit.ippolitov.me/CN_2/2023/socks.jpg)  
 
+
+### HOW TO COMPILE  
+```
+mkdir build && cd build  
+cmake ..  
+make  
+./proxy <port>  
+```
