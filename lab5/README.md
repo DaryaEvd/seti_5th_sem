@@ -1,5 +1,7 @@
 ## SOCKS-PROXY  
 
+This is a single treaded multiplexed SOCKS5 proxy server.  
+
 ### TASK  
 1. You must implement a proxy server that complies with SOCKS version 5.  
 2. In parameters, only the port on which the proxy will wait for incoming connections from clients is passed to the program.  
@@ -31,6 +33,12 @@ cmake ..
 make  
 ./proxy <port>  
 ```
+
 ## What's going on and how it works?  
 - Read about [межсетевой экран aka брэндмауэр, aka firewall](https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B6%D1%81%D0%B5%D1%82%D0%B5%D0%B2%D0%BE%D0%B9_%D1%8D%D0%BA%D1%80%D0%B0%D0%BD)  
 
+In the lab I used `epoll` to manipulate with multiplexed single threaded server.   
+Recomment to read this literature:  
+- [From habr](https://habr.com/ru/companies/infopulse/articles/415259/)  
+- [Smth like man](https://ru.manpages.org/epoll/7)  
+- [Non-blocking sockets](https://www.scottklement.com/rpg/socktut/nonblocking.html)   
