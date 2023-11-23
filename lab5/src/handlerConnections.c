@@ -1,6 +1,7 @@
 #include "handlerConnections.h"
+#include "common.h"
 #include "event.h"
-#include "utils.h"
+#include <stdio.h>
 
 void stopCallback(struct eventData *fdData,
                   struct eventState *state) {

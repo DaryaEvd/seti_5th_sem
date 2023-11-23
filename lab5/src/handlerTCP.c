@@ -1,26 +1,24 @@
 #include "handlerTCP.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
 
 void runTcpCallback(struct eventData *fdData,
                     struct eventState *state) {
   uint8_t buf[BUFFER_SIZE];
-  int bufferLength =
-      recv(fdData->currentFileDescr, buf, BUFFER_SIZE, 0);
-  if (bufferLength > 0) {
-
-    bufferLength =
-        send(fdData->eventTo->currentFileDescr, buf, bufferLength, 0);
-    if (bufferLength > 0) {
+  int buflen = recv(fdData->currentFileDescr, buf, BUFFER_SIZE, 0);
+  if (buflen == -1 && errno != ECONNRESET) {
+    printf("runTcpCallback: recv() err : '%s'\n", strerror(errno));
+  } else if (buflen > 0) {
+    buflen = send(fdData->eventTo->currentFileDescr, buf, buflen, 0);
+    if (buflen > 0) {
       return;
     } else if (errno != ECONNRESET) {
       printf("runTcpCallback: send() err : '%s'\n", strerror(errno));
     }
-  } else if (bufferLength == -1 && errno != ECONNRESET) {
-    printf("runTcpCallback: recv() err : '%s'\n", strerror(errno));
   }
-
-  printf("TCP callback stopped\n");
+  printf("TCP relay stopped\n");
   stopCallback(fdData, state);
 }
 
@@ -28,27 +26,27 @@ void requestCallback(struct eventData *fdData,
                      struct eventState *state) {
   printf("client: %s\n", convertAddrToStr(fdData->addr));
   int reject;
-  uint8_t recvDataFromClient[MAX_SocksRequestStruct_LEN] = {0};
-  uint8_t replayClient[MAX_socksReplyStruct_LEN] = {0};
+  uint8_t recvDataFromClient[MAX_SOCKS_REQUEST_LEN] = {0};
+  uint8_t clientReplay[MAX_SOCKS_REPLY_LEN] = {0};
   struct socksRequestStruct *req =
       (struct socksRequestStruct *)recvDataFromClient;
-  struct socksReplyStruct *replay =
-      (struct socksReplyStruct *)replayClient;
-  replay->version = VERSION;
+  struct socksReplyStruct *rep =
+      (struct socksReplyStruct *)clientReplay;
+  rep->ver = VERSION;
 
   reject = 1;
-  int bufferLength =
-      recv(fdData->currentFileDescr, recvDataFromClient,
-           MAX_SocksRequestStruct_LEN, 0);
-  if (bufferLength > 0) {
+  int buflen = recv(fdData->currentFileDescr, recvDataFromClient,
+                    MAX_SOCKS_REQUEST_LEN, 0);
+  if (buflen > 0) {
 
-    if (bufferLength < MIN_SocksRequestStruct_LEN) {
+    if (buflen < MIN_SOCKS_REQUEST_LEN) {
       printf("Invalid SOCKS request\n");
     } else {
       reject = 0;
     }
-  } else if (bufferLength == -1 && errno != ECONNRESET) {
+  } else if (buflen == -1 && errno != ECONNRESET) {
     printf("requestCallback: recv() err : '%s'\n", strerror(errno));
+
     printf("client: %s\n", convertAddrToStr(fdData->addr));
   }
 
@@ -60,9 +58,9 @@ void requestCallback(struct eventData *fdData,
   }
 
   reject = 1;
-  replay->replay = SUCCEEDED;
+  rep->rep = SUCCEEDED;
   if (req->atyp == IPV6) {
-    replay->replay = ADDRESS_TYPE_NOT_SUPPORTED;
+    rep->rep = ADDRESS_TYPE_NOT_SUPPORTED;
     clearEvent(fdData, state);
     closeAndFree(fdData);
     printf("Unfortunately, address type is not supported\n");
@@ -70,10 +68,10 @@ void requestCallback(struct eventData *fdData,
     if (req->cmd == CONNECT) {
       in_addr_t addr = getDstAddr(&req->dst, req->atyp);
       in_port_t port = getDstPort(&req->dst, req->atyp);
-      int dst_fd = startConnection(addr, port);
-      if (dst_fd) {
+      int dstFD = startConnection(addr, port);
+      if (dstFD) {
         fdData->callback = runTcpCallback;
-        fdData->eventTo = eventSet(dst_fd, runTcpCallback, state);
+        fdData->eventTo = eventSet(dstFD, runTcpCallback, state);
         fdData->eventTo->eventTo = fdData;
 
         fdData->eventTo->addr = malloc(sizeof(struct sockaddr_in));
@@ -85,27 +83,26 @@ void requestCallback(struct eventData *fdData,
         fdData->eventTo->addr->sin_port = port;
         fdData->eventTo->addr->sin_addr.s_addr = addr;
 
-        replay->atyp = IPV4;
-        getLocalAddr(dst_fd, &replay->bnd.ipv4.addr,
-                     &replay->bnd.ipv4.port);
-        printf("replay.bnd: %s:%hu\n",
-               convertToAddr(&replay->bnd.ipv4.addr),
-               ntohs(replay->bnd.ipv4.port));
+        rep->atyp = IPV4;
+        getLocalAddr(dstFD, &rep->bnd.ipv4.addr, &rep->bnd.ipv4.port);
+        printf("rep.bnd: %s:%hu\n",
+               convertToAddr(&rep->bnd.ipv4.addr),
+               ntohs(rep->bnd.ipv4.port));
         reject = 0;
       } else {
-        replay->replay = GENERAL_SOCKS_SERVER_FAILURE;
+        rep->rep = GENERAL_SOCKS_SERVER_FAILURE;
         printf("client: %s\n", convertAddrToStr(fdData->addr));
       }
     }
 
     else {
-      replay->replay = COMMAND_NOT_SUPPORTED;
+      rep->rep = COMMAND_NOT_SUPPORTED;
       printf("Command not supported\n\n");
     }
   }
 
-  if (send(fdData->currentFileDescr, replayClient,
-           socksReplyStruct_SIZE_IPV4, 0) > 0) {
+  if (send(fdData->currentFileDescr, clientReplay,
+           SOCKS_REPLY_SIZE_IPV4, 0) > 0) {
     printf("SOCKS Reply sent successfully\n\n");
   } else {
     reject = 1;
@@ -129,27 +126,25 @@ void handshakeCallback(struct eventData *fdData,
                        struct eventState *state) {
   printf("client: %s\n", convertAddrToStr(fdData->addr));
   int reject;
-  uint8_t recvDataFromClient[MAX_MethodRequestStruct_LEN] = {0};
-  uint8_t replayClient[replyStructMethod_SIZE] = {0};
+  uint8_t recvDataFromClient[MAX_METHOD_REQUEST_LEN] = {0},
+          clientReplay[METHOD_REPLY_SIZE] = {0};
   struct methodRequestStruct *req =
       (struct methodRequestStruct *)recvDataFromClient;
-  struct replyStructMethod *replay =
-      (struct replyStructMethod *)replayClient;
-  replay->version = VERSION;
+  struct replyStructMethod *rep =
+      (struct replyStructMethod *)clientReplay;
+  rep->ver = VERSION;
 
-  // method send
   reject = 1;
-  int bufferLength =
-      recv(fdData->currentFileDescr, recvDataFromClient,
-           MAX_MethodRequestStruct_LEN, 0);
-  if (bufferLength > 0) {
+  int buflen = recv(fdData->currentFileDescr, recvDataFromClient,
+                    MAX_METHOD_REQUEST_LEN, 0);
+  if (buflen > 0) {
 
-    if (bufferLength < MIN_MethodRequestStruct_LEN) {
+    if (buflen < MIN_METHOD_REQUEST_LEN) {
       printf("Invalid version identifier/method selection message\n");
     } else {
       reject = 0;
     }
-  } else if (bufferLength == -1 && errno != ECONNRESET) {
+  } else if (buflen == -1 && errno != ECONNRESET) {
     printf("handshakeCallback: recv() err : '%s'\n", strerror(errno));
 
     printf("client: %s\n", convertAddrToStr(fdData->addr));
@@ -164,10 +159,10 @@ void handshakeCallback(struct eventData *fdData,
 
   // method request
   reject = 1;
-  replay->method = NO_ACCEPTABLE_METHODS;
-  if ((int)req->version == VERSION) {
+  rep->method = NO_ACCEPTABLE_METHODS;
+  if ((int)req->ver == VERSION) {
     if (doesMethodExist(req, NO_AUTHENTICATION_REQUIRED)) {
-      replay->method = NO_AUTHENTICATION_REQUIRED;
+      rep->method = NO_AUTHENTICATION_REQUIRED;
       fdData->callback = requestCallback;
       reject = 0;
     } else {
@@ -178,13 +173,12 @@ void handshakeCallback(struct eventData *fdData,
   }
 
   // method reply
-  if (send(fdData->currentFileDescr, replayClient,
-           replyStructMethod_SIZE, 0) > 0) {
+  if (send(fdData->currentFileDescr, clientReplay, METHOD_REPLY_SIZE,
+           0) > 0) {
     printf("METHOD selection message sent successfully\n");
   } else {
     reject = 1;
     printf("handshakeCallback: send() err : '%s'\n", strerror(errno));
-
     printf("client: %s\n", convertAddrToStr(fdData->addr));
   }
 
@@ -197,7 +191,6 @@ void handshakeCallback(struct eventData *fdData,
 
 int setNonBlocking(int sock) {
   int flags = fcntl(sock, F_GETFL, 0);
-
   if (flags == -1) {
     printf("setNonBlocking: fcntl() err : '%s'\n", strerror(errno));
     return -1;
@@ -210,6 +203,7 @@ int setNonBlocking(int sock) {
     printf("setNonBlocking: fcntl() err : '%s'\n", strerror(errno));
     return -1;
   }
+
   return result;
 }
 
@@ -219,7 +213,6 @@ void acceptCallback(struct eventData *fdData,
   struct sockaddr_in *clientAddr = malloc(sizeof(struct sockaddr_in));
   if (!clientAddr) {
     printf("acceptCallback: malloc() err : '%s'\n", strerror(errno));
-
     exit(EXIT_FAILURE);
   }
 
@@ -233,7 +226,6 @@ void acceptCallback(struct eventData *fdData,
   }
   if (currentFileDescr == -1) {
     printf("acceptCallback: accept() err : '%s'\n", strerror(errno));
-
   } else {
     fdData = eventSet(currentFileDescr, handshakeCallback, state);
     fdData->addr = clientAddr;

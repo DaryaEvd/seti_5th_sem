@@ -1,6 +1,5 @@
 #ifndef EVENT__
 #define EVENT__
-
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
@@ -9,7 +8,7 @@
 #define MAX_EVENTS 64
 
 struct eventState {
-  int epollFileDescr; 
+  int epollFileDescr;
   int numberOfReadyFileDescrs;
 };
 

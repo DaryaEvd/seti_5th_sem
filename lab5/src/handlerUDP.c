@@ -1,10 +1,12 @@
-#include "commons.h"
- #include "event.h"
+#include "common.h"
+#include "event.h"
 #include "handlerConnections.h"
-#include "utils.h"
+#include "handlerTCP.h"
 #include <errno.h>
 #include <fcntl.h>
- 
+#include <stdio.h>
+#include <string.h>
+
 void stopUdpCallback(struct eventData *fdData) {
   printf("UDP relay stopped\n");
   stopCallback(fdData, state);
@@ -19,10 +21,10 @@ void runUdpCallback(struct eventData *fdData,
   // source addr from which udp packet receivved
   struct sockaddr_in peerAddr;
   socklen_t addrlen = sizeof(struct sockaddr_in);
-  int bufferLength = recvfrom(fdData->currentFileDescr,
-                              recvDataFromClient, BUFFER_SIZE, 0,
-                              (struct sockaddr *)&peerAddr, &addrlen);
-  if (bufferLength <= 0) {
+  int buflen = recvfrom(fdData->currentFileDescr, recvDataFromClient,
+                        BUFFER_SIZE, 0, (struct sockaddr *)&peerAddr,
+                        &addrlen);
+  if (buflen <= 0) {
     printf("runUdpCallback: recvfrom() err : '%s'\n",
            strerror(errno));
     printf("client: %s\n", convertAddrToStr(fdData->addr));
@@ -51,10 +53,9 @@ void runUdpCallback(struct eventData *fdData,
     dstAddrDgram.sin_port = getDstPort(&dgram->dst, dgram->atyp);
     dstAddrDgram.sin_addr.s_addr =
         getDstAddr(&dgram->dst, dgram->atyp);
-    printf("client -> %s\n", convertAddrToStr(&dstAddrDgram));
 
     int payloadLen;
-    uint8_t *payload = getPayload(dgram, bufferLength, &payloadLen);
+    uint8_t *payload = getPayload(dgram, buflen, &payloadLen);
     printf("payload: \n");
 
     if (sendto(fdData->currentFileDescr, payload, payloadLen, 0,
@@ -64,28 +65,25 @@ void runUdpCallback(struct eventData *fdData,
              strerror(errno));
       printf("client: %s\n", convertAddrToStr(fdData->addr));
       printf("peer: %s\n", convertAddrToStr(&peerAddr));
-      printf("client -> %s\n", convertAddrToStr(&dstAddrDgram));
-      printf("payload: \n");
     } else {
       printf("Payload sent successfully\n");
     }
   } else {
     // handle situation when the packet is from the peer to the client
-    printf("client <- %s\n", convertAddrToStr(&peerAddr));
     uint8_t replayClient[BUFFER_SIZE + DGRAM_IPV4_SIZE] = {0};
     struct datagramStruct *dgram =
         (struct datagramStruct *)replayClient;
 
-    // prepare new datagramStruct with the client's addr as the dest
+    // prepare a new datagramStruct with the client's address as dst
     dgram->atyp = IPV4;
     dgram->dst.ipv4.addr = peerAddr.sin_addr.s_addr;
     dgram->dst.ipv4.port = peerAddr.sin_port;
     memcpy((uint8_t *)&dgram->dst.ipv4.port + 2, recvDataFromClient,
-           bufferLength);
+           buflen);
 
-    // send the new datagramStruct to the client
+    // Send the new datagramStruct to the client
     if (sendto(fdData->currentFileDescr, replayClient,
-               bufferLength + DGRAM_IPV4_SIZE, 0,
+               buflen + DGRAM_IPV4_SIZE, 0,
                (struct sockaddr *)fdData->addr,
                sizeof(struct sockaddr_in)) == -1) {
 

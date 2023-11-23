@@ -1,5 +1,5 @@
-#ifndef HANDLER_UPD__
-#define HANDLER_UPD__
+#ifndef HANDLER_UDP__
+#define HANDLER_UPP__
 
 void stopUdpCallback(struct eventData *fdData);
 
@@ -11,4 +11,4 @@ it to another socket if necessary
 void runUdpCallback(struct eventData *fdData,
                     struct eventState *state);
 
-#endif // HANDLER_UPD__
+#endif // HANDLER_UDP__
