@@ -34,6 +34,15 @@ make
 ./proxy <port>  
 ```
 
+## HOW TO CHECK WORKING?  
+You can use any browser, but I recommend Firefox. So,  
+1. Run proxy server
+2. Open Firefox. Go to __settings->general__
+3. Scroll till the end. You can see there "Network Settings". Click on it  
+4. Tick "Manual proxy configuration"  
+5. Write your host and a port. Choose SOCKS v5.  
+6. Click "Ok"  
+
 ## What's going on and how it works?  
 - Read about [firewall](https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B6%D1%81%D0%B5%D1%82%D0%B5%D0%B2%D0%BE%D0%B9_%D1%8D%D0%BA%D1%80%D0%B0%D0%BD)  
 
