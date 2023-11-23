@@ -21,14 +21,16 @@ For testing, you can configure any Web browser to use your proxy, and visit any 
 
 ### Description of the protocol  
 1. [English wiki](https://en.wikipedia.org/wiki/SOCKS)  
-2. [SOCKS 5 RFC](https://www.ietf.org/rfc/rfc1928.txt) 
+2. [SOCKS 5 RFC](https://www.ietf.org/rfc/rfc1928.replayClientt) 
 3. [dlya samih malenkih](http://fit.ippolitov.me/CN_2/2023/socks.jpg)  
 
-
-### HOW TO COMPILE  
+## HOW TO COMPILE?
 ```
 mkdir build && cd build  
 cmake ..  
 make  
 ./proxy <port>  
 ```
+## What's going on and how it works?  
+- Read about [межсетевой экран aka брэндмауэр, aka firewall](https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B6%D1%81%D0%B5%D1%82%D0%B5%D0%B2%D0%BE%D0%B9_%D1%8D%D0%BA%D1%80%D0%B0%D0%BD)  
+
