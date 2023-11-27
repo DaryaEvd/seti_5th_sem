@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   in_addr_t addr = htonl(INADDR_ANY);
   in_port_t port = htons(atoi(argv[1]));
 
-  puts("NO AUTHENTICATION REQUIRED\n");
+  printf("NO AUTHENTICATION REQUIRED\n");
 
   int currentFileDescr = startListen(addr, port);
   if (!currentFileDescr) {

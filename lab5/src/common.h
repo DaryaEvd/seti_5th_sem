@@ -99,7 +99,7 @@ char *convertAddrToStr(struct sockaddr_in *addr);
 char *convertToAddr(void *addr);
 int startListen(in_addr_t addr, in_port_t port);
 int startConnection(in_addr_t addr, in_port_t port);
-in_addr_t resolveDomain(char *domain);
+
 void getLocalAddr(int currentFileDescr, in_addr_t *addr,
                   in_port_t *port);
 void getPeerAddr(int currentFileDescr, in_addr_t *addr,

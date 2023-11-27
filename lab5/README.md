@@ -47,7 +47,7 @@ You can use any browser, but I recommend Firefox. So,
 - Read about [firewall](https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B6%D1%81%D0%B5%D1%82%D0%B5%D0%B2%D0%BE%D0%B9_%D1%8D%D0%BA%D1%80%D0%B0%D0%BD)  
 
 In the lab I used `epoll` to manipulate with multiplexed single threaded server.   
-Recomment to read this literature:  
+Recommend to read this literature:  
 - [From habr](https://habr.com/ru/companies/infopulse/articles/415259/)  
 - [Smth like man](https://ru.manpages.org/epoll/7)  
 - [Non-blocking sockets](https://www.scottklement.com/rpg/socktut/nonblocking.html)   

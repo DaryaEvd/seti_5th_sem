@@ -6,6 +6,7 @@ add_executable(proxy.o
         src/event.c
         src/handlerConnections.c
         src/common.c
+        src/resolver.c
         src/handlerUDP.c
         src/handlerTCP.c
         )
