@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1">
+  <VBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="400.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+    <AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="63.0" prefWidth="500.0" style="-fx-background-color: #390040;">
+      <Button fx:id="newGameButton" focusTraversable="false" layoutX="76.0" layoutY="10.0" mnemonicParsing="false" prefHeight="43.0" prefWidth="162.0" text="New Game" AnchorPane.leftAnchor="76.0" AnchorPane.topAnchor="10.0">
+        <font>
+          <Font size="20.0" />
+        </font>
+      </Button>
+
+      <Button fx:id="refreshButton" layoutX="263.0" layoutY="10.0" mnemonicParsing="false" prefHeight="43.0" prefWidth="162.0" text="Show Games">
+        <font>
+          <Font size="20.0" />
+        </font>
+      </Button>
+    </AnchorPane>
+
+
+    <HBox fx:id="titlesList" alignment="BASELINE_CENTER" minHeight="-Infinity" prefHeight="52.0" prefWidth="900.0" style="-fx-background-color: #730071;">
+
+      <Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="51.0" prefWidth="139.0" style="-fx-background-color: #730071;" text="Master" textAlignment="CENTER" textFill="#e0e2db" HBox.hgrow="ALWAYS">
+        <font>
+          <Font size="16.0" />
+        </font>
+      </Label>
+
+      <Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="51.0" prefWidth="125.0" style="-fx-background-color: #730071;" text="Players amount" textAlignment="CENTER" textFill="#e0e2db" HBox.hgrow="ALWAYS">
+        <font>
+          <Font size="16.0" />
+        </font>
+      </Label>
+
+      <Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="51.0" prefWidth="125.0" style="-fx-background-color: #730071;" text="Field size" textAlignment="CENTER" textFill="#e0e2db" HBox.hgrow="ALWAYS">
+        <font>
+          <Font size="16.0" />
+        </font>
+      </Label>
+
+      <Label alignment="CENTER" maxWidth="1.7976931348623157E308" prefHeight="51.0" prefWidth="125.0" style="-fx-background-color: #730071;" text="Food" textAlignment="CENTER" textFill="#e0e2db" HBox.hgrow="ALWAYS">
+        <font>
+          <Font size="16.0" />
+        </font>
+      </Label>
+
+    </HBox>
+
+
+    <VBox fx:id="gamesList" alignment="CENTER" fillWidth="false" prefHeight="229.0" prefWidth="500.0" style="-fx-background-color: #DC9596;" VBox.vgrow="ALWAYS">
+      <VBox.margin>
+        <Insets />
+      </VBox.margin>
+    </VBox>
+
+  </VBox>
+
+</AnchorPane>
