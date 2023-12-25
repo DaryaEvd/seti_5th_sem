@@ -59,14 +59,12 @@ public class GameFrame {
         playerArea.removeAll();
         for (Player player : playerList) {
             if (!player.isAlive()) {
-                playerArea.addPlayer(player.getColor(), player.getNickname() + " [zombie]" , player.getScore());
+                playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole() , player.getScore());
             } else if (player.getRole() == SnakesProto.NodeRole.VIEWER && player.getSnake() == null) {
                 //don't add player to playerList
             } else if (player.getNickname().equals(playerName)) {
-//                playerArea.addPlayer(player.getColor(), player.getNickname() + "(you)", player.getScore());
                 playerArea.addPlayer(player.getColor(), "you: " + player.getNickname() + " " + player.getRole(), player.getScore());
             } else if (player.getRole() == SnakesProto.NodeRole.MASTER) {
-//                playerArea.addPlayer(player.getColor(), player.getNickname() + "(master)", player.getScore());
                 playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
             } else {
                 playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
