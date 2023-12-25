@@ -11,7 +11,6 @@ public class GameInfo {
         this.announcement = announcement;
     }
 
-    //only when creating game
     public GameInfo(String gameName) {
         announcement = SnakesProto.GameAnnouncement
                 .newBuilder().setGameName(gameName)

@@ -2,7 +2,7 @@ package ccfit.nsu.ru.daryaevd.model;
 
 import protobuf.SnakesProto;
 
-import java.awt.*;
+import java.awt.Color;
 
 public class Player {
     private MySnake mySnake;
@@ -18,12 +18,16 @@ public class Player {
     private boolean isLost = false;
 
     public Player(int ID, String playerName) {
-        color = new Color((int) (Math.random() * 100),
-                (int) (Math.random() * 100),
-                (int) (Math.random() * 100));
+        color = generateRandomColor();
         this.ID = ID;
         this.nickname = playerName;
         score = 0;
+    }
+
+    private Color generateRandomColor() {
+        return new Color((int) (Math.random() * 100),
+                (int) (Math.random() * 100),
+                (int) (Math.random() * 100));
     }
 
     public SnakesProto.NodeRole getRole() {

@@ -292,33 +292,33 @@ public class FieldInfo {
     }
 
     public void makeMove(Movement movement) {//changing direction
-        Player player = getPlayerByID(movement.getPlayerID());
+        Player player = getPlayerByID(movement.playerID());
         if (player.getSnake() == null) {
             return;
         }
         SnakesProto.Direction direction = player.getSnake().getDirection();
-        switch (movement.getDirection()) {
+        switch (movement.direction()) {
             case UP: {
                 if (!(direction == SnakesProto.Direction.DOWN)) {
-                    player.getSnake().setDirection(movement.getDirection());
+                    player.getSnake().setDirection(movement.direction());
                 }
                 break;
             }
             case DOWN: {
                 if (!(direction == SnakesProto.Direction.UP)) {
-                    player.getSnake().setDirection(movement.getDirection());
+                    player.getSnake().setDirection(movement.direction());
                 }
                 break;
             }
             case LEFT: {
                 if (!(direction == SnakesProto.Direction.RIGHT)) {
-                    player.getSnake().setDirection(movement.getDirection());
+                    player.getSnake().setDirection(movement.direction());
                 }
                 break;
             }
             case RIGHT: {
                 if (!(direction == SnakesProto.Direction.LEFT)) {
-                    player.getSnake().setDirection(movement.getDirection());
+                    player.getSnake().setDirection(movement.direction());
                 }
                 break;
             }

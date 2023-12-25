@@ -59,7 +59,7 @@ public class NewGameWindow implements ActionListener {
         panel.add(startButton, constraints);
 
         mainWindow.setContentPane(panel);
-        mainWindow.setSize(new Dimension(400, 200));  // Adjusted the size
+        mainWindow.setSize(new Dimension(400, 200));
         mainWindow.setLocationRelativeTo(null);
 
     }

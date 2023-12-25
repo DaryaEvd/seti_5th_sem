@@ -47,7 +47,6 @@ public class AvailableGamesPanel extends JPanel implements ActionListener {
         constraints.gridx = 3;
         add(button, constraints);
 
-        //setMinimumSize(new Dimension(200, 50));
         setPreferredSize(new Dimension(200, 50));
         this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 

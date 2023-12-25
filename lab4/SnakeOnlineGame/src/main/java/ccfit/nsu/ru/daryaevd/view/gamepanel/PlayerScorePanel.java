@@ -14,7 +14,6 @@ public class PlayerScorePanel extends JPanel {
         setMinimumSize(new Dimension(200, 500));
         players = new JPanel();
         players.setLayout(new BoxLayout(players, BoxLayout.Y_AXIS));
-//        players.setBackground(Color.decode("#DC9596"));
         scrollPane = new JScrollPane(players);
 
         add(scrollPane, BorderLayout.CENTER);

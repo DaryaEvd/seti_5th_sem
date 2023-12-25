@@ -33,14 +33,14 @@ public class MasterActionThread extends Thread {
                     Movement movement = movementQueue.get(i);
                     boolean moveMade = false;
                     for (Integer playerID : playersID) {
-                        if (movement.getPlayerID() == playerID) {
+                        if (movement.playerID() == playerID) {
                             movementQueue.remove(movement);
                             moveMade = true;
                             break;
                         }
                     }
                     if (!moveMade) {
-                        playersID.add(movement.getPlayerID());
+                        playersID.add(movement.playerID());
                         fieldInfo.makeMove(movement);
                     }
                 }

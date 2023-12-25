@@ -80,16 +80,6 @@ public class Model {
         viewBase.drawField(players, foods, playerName);
     }
 
-    public void closeGameFrame() {
-        viewBase.disconnect();
-    }
-
-    public void disconnect() {
-        mainThread.disconnect();
-        mainThread.stop();
-        mainThread = null;
-    }
-
     public void makeMove(KeyEvent e) {
         if (mainThread == null) {
             return;
@@ -120,6 +110,16 @@ public class Model {
 
     public void showMessage(String message) {
         viewBase.showMessage(message);
+    }
+
+    public void closeGameFrame() {
+        viewBase.disconnect();
+    }
+
+    public void disconnect() {
+        mainThread.disconnect();
+        mainThread.stop();
+        mainThread = null;
     }
 
     public void stop() {

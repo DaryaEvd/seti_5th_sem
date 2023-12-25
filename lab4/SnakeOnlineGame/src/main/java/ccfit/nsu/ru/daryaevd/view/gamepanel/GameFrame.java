@@ -37,8 +37,6 @@ public class GameFrame {
         JPanel mainPanel = getMainPanel(width, height);
 
         mainWindow.setContentPane(mainPanel);
-//        mainWindow.setResizable(false);
-//        mainWindow.setSize(new Dimension(1000, 700));
         mainWindow.setMinimumSize(new Dimension(1000, 850));
         mainWindow.setPreferredSize(new Dimension(1000, 850));
 
@@ -59,7 +57,7 @@ public class GameFrame {
         playerArea.removeAll();
         for (Player player : playerList) {
             if (!player.isAlive()) {
-                playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole() , player.getScore());
+                playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
             } else if (player.getRole() == SnakesProto.NodeRole.VIEWER && player.getSnake() == null) {
                 //don't add player to playerList
             } else if (player.getNickname().equals(playerName)) {
@@ -77,9 +75,6 @@ public class GameFrame {
         }
     }
 
-    private void handleBackButton() {
-        disconnect();
-    }
 
     private JPanel getMainPanel(int width, int height) {
 
@@ -111,6 +106,10 @@ public class GameFrame {
 
     public void close() {
         mainWindow.dispose();
+    }
+
+    private void handleBackButton() {
+        disconnect();
     }
 
     private void disconnect() {

@@ -19,8 +19,6 @@ public class FieldPanel extends JPanel {
     private Point rightBottom;
 
     public FieldPanel(int width, int height) {
-//        setMinimumSize(new Dimension(800, 800));
-//        setPreferredSize(new Dimension(600, 600));
         setPreferredSize(new Dimension(800, 710));
         this.width = width;
         this.height = height;
@@ -72,6 +70,7 @@ public class FieldPanel extends JPanel {
 
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, getWidth(), getHeight());
+
         g.setColor(Color.GREEN);
         g.drawLine(leftTop.x, leftTop.y, leftBottom.x, leftBottom.y);
         g.drawLine(leftBottom.x, leftBottom.y, rightBottom.x, rightBottom.y);
