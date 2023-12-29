@@ -4,8 +4,7 @@ import ccfit.nsu.ru.daryaevd.view.ViewBase;
 import ccfit.nsu.ru.daryaevd.model.threads.GameDisplayThread;
 import ccfit.nsu.ru.daryaevd.model.threads.GamesListener;
 import ccfit.nsu.ru.daryaevd.model.threads.MainThread;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 import protobuf.SnakesProto;
 
 import java.awt.*;
@@ -15,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Model {
-    private static final Logger logger = LoggerFactory.getLogger(Model.class.getSimpleName());
+    private static final Logger logger = Logger.getLogger(Model.class.getSimpleName());
 
     private final ViewBase viewBase;
     private GamesListener listener;
@@ -32,13 +31,13 @@ public class Model {
             listener.start();
             logger.info("listener starts");
         } catch (IOException e) {
-            logger.info("{}: error in starting a listener", Model.class);
+            logger.info("{}: error in starting a listener");
         }
         activeGames = new ArrayList<>();
 
         gameShower = new GameDisplayThread(this);
         gameShower.start();
-        logger.info("game displat started");
+        logger.info("game display started");
     }
 
     public void showActiveGames() {
@@ -62,7 +61,7 @@ public class Model {
             mainThread.newGame();
             return mainThread.getGameInfo();
         } catch (IOException e) {
-            logger.info("{}: createGame(): error in executing a MainThread", Model.class);
+            logger.info("{}: createGame(): error in executing a MainThread");
             return null;
         }
     }
@@ -72,7 +71,7 @@ public class Model {
             mainThread = new MainThread(this, game, playerName);
             mainThread.connectToGame(SnakesProto.NodeRole.NORMAL);
         } catch (IOException e) {
-            logger.info("{}: connect(): error in executing a MainThread", Model.class);
+            logger.info("{}: connect(): error in executing a MainThread");
         }
     }
 
@@ -107,6 +106,7 @@ public class Model {
             }
         }
     }
+
 
     public void showMessage(String message) {
         viewBase.showMessage(message);

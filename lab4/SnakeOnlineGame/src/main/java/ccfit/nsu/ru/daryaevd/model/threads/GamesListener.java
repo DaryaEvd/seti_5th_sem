@@ -9,11 +9,10 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Arrays;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 public class GamesListener extends Thread {
-    private static final Logger logger = LoggerFactory.getLogger(GamesListener.class.getSimpleName());
+    private static final Logger logger = Logger.getLogger(GamesListener.class.getSimpleName());
 
     private final MulticastSocket server;
     private boolean isRunning = true;
@@ -46,7 +45,7 @@ public class GamesListener extends Thread {
             } catch (SocketTimeoutException e) {
                 continue;
             } catch (IOException e) {
-                logger.info("{}: Server couldn't receive a packet", GamesListener.class);
+                logger.info("{}: Server couldn't receive a packet");
                 continue;
             }
             SnakesProto.GameMessage message;
@@ -54,7 +53,7 @@ public class GamesListener extends Thread {
                 byte[] data = packet.getData();
                 message = SnakesProto.GameMessage.parseFrom(Arrays.copyOfRange(data, 0, packet.getLength()));
             } catch (InvalidProtocolBufferException e) {
-                logger.info("{}: Server couldn't parse a msg", GamesListener.class);
+                logger.info("{}: Server couldn't parse a msg");
                 continue;
             }
             if (message.getTypeCase() != SnakesProto.GameMessage.TypeCase.ANNOUNCEMENT) {

@@ -11,6 +11,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Comparator;
 import java.util.List;
 
 public class GameFrame {
@@ -55,7 +56,9 @@ public class GameFrame {
     public void drawField(List<Player> playerList, List<Point> foods, String playerName) {
         field.reset();
         playerArea.removeAll();
-        for (Player player : playerList) {
+        List<Player> updatedScoreList = playerList.stream().sorted(Comparator.comparing(Player::getScore).reversed()
+                .thenComparing(Player::getNickname)).toList();
+        for(Player player : updatedScoreList) {
             if (!player.isAlive()) {
                 playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
             } else if (player.getRole() == SnakesProto.NodeRole.VIEWER && player.getSnake() == null) {
@@ -64,7 +67,8 @@ public class GameFrame {
                 playerArea.addPlayer(player.getColor(), "you: " + player.getNickname() + " " + player.getRole(), player.getScore());
             } else if (player.getRole() == SnakesProto.NodeRole.MASTER) {
                 playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
-            } else {
+            }
+            else {
                 playerArea.addPlayer(player.getColor(), player.getNickname() + " " + player.getRole(), player.getScore());
             }
             field.drawSnake(player.getSnake(), player.getColor());
@@ -74,7 +78,6 @@ public class GameFrame {
             field.drawFood(food);
         }
     }
-
 
     private JPanel getMainPanel(int width, int height) {
 

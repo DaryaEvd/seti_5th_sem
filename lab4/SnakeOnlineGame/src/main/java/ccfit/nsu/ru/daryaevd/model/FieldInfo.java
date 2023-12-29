@@ -5,10 +5,8 @@ import ccfit.nsu.ru.daryaevd.model.threads.master.MasterThread;
 import protobuf.SnakesProto;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 
 public class FieldInfo {
     private final List<Player> players;
@@ -168,6 +166,8 @@ public class FieldInfo {
                     player.setAddress(gamePlayer.hasIpAddress() ? gamePlayer.getIpAddress() : "");
                     player.setPort(gamePlayer.hasPort() ? gamePlayer.getPort() : 0);
                 }
+
+
             }
             players.notifyAll();
         }
@@ -177,6 +177,7 @@ public class FieldInfo {
             foods.add(new Point(food.getX(), food.getY()));
         }
     }
+
 
     public void masterStart() {
         thread = new MasterActionThread(this, delay);

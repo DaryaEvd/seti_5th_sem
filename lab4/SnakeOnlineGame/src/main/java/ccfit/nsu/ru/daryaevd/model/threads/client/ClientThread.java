@@ -7,8 +7,12 @@ import ccfit.nsu.ru.daryaevd.model.Model;
 import ccfit.nsu.ru.daryaevd.model.Player;
 import ccfit.nsu.ru.daryaevd.model.threads.*;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.LogRecord;
+
 import protobuf.SnakesProto;
 
 import java.io.IOException;
@@ -22,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ClientThread extends Thread implements GameThread {
-    private static final Logger logger = LoggerFactory.getLogger(ClientThread.class.getSimpleName());
+    private static final Logger logger = Logger.getLogger(ClientThread.class.getSimpleName());
 
     private final DatagramSocket socket;
     private final MainThread mainThread;
@@ -70,12 +74,18 @@ public class ClientThread extends Thread implements GameThread {
             try {
                 gameMessage = SnakesProto.GameMessage
                         .parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
-                logger.info("received from: {}, addr = {},  msg type: {}",
+
+                LogRecord record = new LogRecord(Level.INFO,
+                        "received from: {0}, addr = {1}, msg type: {2}");
+                record.setParameters(new Object[]{
                         packet.getSocketAddress(),
                         ((InetSocketAddress) packet.getSocketAddress()).getAddress(),
-                        gameMessage.getTypeCase());
+                        gameMessage.getTypeCase()
+                });
+                logger.log(record);
+
             } catch (InvalidProtocolBufferException e) {
-                logger.info("{}: Client Thread couldn't parse a msg", GamesListener.class);
+                logger.info("{}: Client Thread couldn't parse a msg");
                 continue;
             }
             switch (gameMessage.getTypeCase()) {
@@ -116,10 +126,12 @@ public class ClientThread extends Thread implements GameThread {
                                 .setMsgSeq(gameMessage.getMsgSeq()).build();
                         sendMessage(answer, packet.getAddress().getHostAddress(), packet.getPort());
                     }
-                    logger.info("received from: {}, addr = {},  msg type: {}",
-                            packet.getSocketAddress(),
+
+                    LogRecord record = new LogRecord(Level.INFO, "received from: {0}, addr = {1},  msg type: {1}");
+                    record.setParameters(new Object[]{packet.getSocketAddress(),
                             ((InetSocketAddress) packet.getSocketAddress()).getAddress(),
-                            gameMessage.getTypeCase());
+                            gameMessage.getTypeCase()});
+
                     break;
                 }
                 case STATE: {
@@ -133,6 +145,7 @@ public class ClientThread extends Thread implements GameThread {
                     sendMessage(answer, packet.getAddress().getHostAddress(), packet.getPort());
                     SnakesProto.GameState state = gameMessage.getState().getState();
                     fieldInfo.setField(state);
+
                     synchronized (fieldInfo.getPlayers()) {
                         model.drawField(fieldInfo.getPlayers(), fieldInfo.getFoods(), playerName);
                         fieldInfo.getPlayers().notifyAll();

@@ -4,8 +4,10 @@ package ccfit.nsu.ru.daryaevd.model.threads.master;
 import ccfit.nsu.ru.daryaevd.model.*;
 import ccfit.nsu.ru.daryaevd.model.threads.*;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import protobuf.SnakesProto;
 
 import java.io.IOException;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class MasterThread extends Thread implements GameThread {
-    private static final Logger logger = LoggerFactory.getLogger(MasterThread.class.getSimpleName());
+    private static final Logger logger = Logger.getLogger(MasterThread.class.getSimpleName());
 
     private boolean isRunning = true;
     private final DatagramSocket socket;
@@ -68,7 +70,7 @@ public class MasterThread extends Thread implements GameThread {
                 gameMessage = SnakesProto.GameMessage
                         .parseFrom(Arrays.copyOfRange(packet.getData(), 0, packet.getLength()));
             } catch (InvalidProtocolBufferException e) {
-                logger.info("{}: Server couldn't parse a msg", MasterThread.class);
+                logger.info("{}: Server couldn't parse a msg");
                 continue;
             }
             switch (gameMessage.getTypeCase()) {
@@ -368,11 +370,14 @@ public class MasterThread extends Thread implements GameThread {
             packet.setPort(port);
             socket.send(packet);
 
-
-            logger.info("send to: {}, addr = {},  msg type: {}",
+            LogRecord record = new LogRecord(Level.INFO,
+                    "send to: {0}, addr = {1}, msg type: {2}");
+            record.setParameters(new Object[]{
                     packet.getSocketAddress(),
                     ((InetSocketAddress) packet.getSocketAddress()).getAddress(),
-                    message.getTypeCase());
+                    message.getTypeCase()
+            });
+            logger.log(record);
 
         } catch (IOException ignored) {
         }
