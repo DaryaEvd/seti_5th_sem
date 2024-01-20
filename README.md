@@ -6,6 +6,7 @@ Networks course at NSU
 - [lab1](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab1) - Обнаружение копий себя в локальной сети   
 - [lab2](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab2) - Передача файла по TCP с подсчётом скорости передачи данных  
 - [lab3](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab3) - Места (Асинхронное сетевое взаимодействие)  
+- [lab4](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab4) - Змейка по сети  
 - [lab5](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab5) - Прокси SOCKS5   
 
 
