@@ -9,6 +9,9 @@ Networks course at NSU
 - [lab4](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab4) - Змейка по сети  
 - [lab5](https://github.com/DaryaEvd/seti_5th_sem/tree/main/lab5) - Прокси SOCKS5   
 
+Файл для подготовки к экзамену - смотреть [тут](https://github.com/DaryaEvd/seti_5th_sem/blob/main/SETI_EXAM.pdf)  
+
+
 
 
 
